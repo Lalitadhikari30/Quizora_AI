@@ -474,4 +474,4 @@ For support and questions:
 
 ---
 
-**Built with ❤️ by the Quizora Team**
+

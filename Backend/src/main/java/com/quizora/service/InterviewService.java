@@ -248,7 +248,8 @@ public class InterviewService {
     }
 
     public List<InterviewSessionResponse> getUserInterviews(String userId) {
-        List<InterviewSession> sessions = interviewSessionRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        List<InterviewSession> sessions = interviewSessionRepository.findByUserIdOrderByStartTimeDesc(userId);
+
         
         return sessions.stream()
                 .map(session -> {

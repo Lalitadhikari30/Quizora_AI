@@ -14,7 +14,8 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Long> 
     
     List<QuizAttempt> findByUserId(String userId);
     
-    List<QuizAttempt> findByUserIdOrderByCreatedAtDesc(String userId);
+    List<QuizAttempt> findByUserIdOrderByCompletionTimeDesc(String userId);
+
     
     List<QuizAttempt> findByQuizId(Long quizId);
     

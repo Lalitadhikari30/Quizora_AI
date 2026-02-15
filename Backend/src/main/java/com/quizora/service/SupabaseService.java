@@ -28,8 +28,8 @@ public class SupabaseService {
     
     private final WebClient webClient;
 
-    public SupabaseService(WebClient.Builder webClientBuilder) {
-        this.webClient = webClientBuilder.build();
+    public SupabaseService() {
+        this.webClient = WebClient.builder().build();
     }
 
     public String uploadFile(byte[] fileData, String fileName, String userId, String bucketName) {

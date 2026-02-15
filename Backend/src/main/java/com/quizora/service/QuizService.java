@@ -230,6 +230,8 @@ public class QuizService {
 
     public List<QuizResponse> getUserQuizzes(String userId) {
         List<Quiz> quizzes = quizRepository.findByUserIdOrderByCreatedAtDesc(userId);
+
+
         
         return quizzes.stream()
                 .map(quiz -> {

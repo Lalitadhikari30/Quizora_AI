@@ -7,56 +7,74 @@ import {
   TrendingUp,
   Users
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { performanceService } from '../services/performanceService';
+import { quizService } from '../services/quizService';
+import { interviewService } from '../services/interviewService';
 
 const Dashboard = () => {
-
-  const [stats] = useState({
-    totalQuizzes: 12,
-    completedQuizzes: 8,
-    averageScore: 85,
-    interviewSessions: 5,
-    studyStreak: 7,
-    totalStudyTime: 24,
+  const [stats, setStats] = useState({
+    totalQuizzes: 0,
+    completedQuizzes: 0,
+    averageScore: 0,
+    interviewSessions: 0,
+    studyStreak: 0,
+    totalStudyTime: 0,
   });
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const [recentActivities] = useState([
-    {
-      id: '1',
-      type: 'quiz',
-      title: 'JavaScript Fundamentals',
-      score: 92,
-      completedAt: '2024-01-15',
-      duration: '25 min',
-      icon: BookOpen,
-    },
-    {
-      id: '2',
-      type: 'interview',
-      title: 'Frontend Developer Interview',
-      completedAt: '2024-01-14',
-      duration: '45 min',
-      icon: Brain,
-    },
-    {
-      id: '3',
-      type: 'quiz',
-      title: 'React Hooks Mastery',
-      score: 88,
-      completedAt: '2024-01-13',
-      duration: '30 min',
-      icon: Target,
-    },
-    {
-      id: '4',
-      type: 'interview',
-      title: 'System Design Questions',
-      completedAt: '2024-01-12',
-      duration: '35 min',
-      icon: Users,
-    },
-  ]);
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const [performanceData, quizzesData, interviewsData] = await Promise.all([
+          performanceService.getUserPerformance(),
+          quizService.getUserQuizzes(),
+          interviewService.getUserInterviews()
+        ]);
+
+        // Update stats
+        setStats({
+          totalQuizzes: quizzesData?.length || 0,
+          completedQuizzes: performanceData?.completedQuizzes || 0,
+          averageScore: performanceData?.averageScore || 0,
+          interviewSessions: interviewsData?.length || 0,
+          studyStreak: performanceData?.studyStreak || 0,
+          totalStudyTime: performanceData?.totalStudyTime || 0,
+        });
+
+        // Update recent activities
+        const activities = [
+          ...(quizzesData?.slice(0, 2).map((quiz, index) => ({
+            id: `quiz-${index}`,
+            type: 'quiz',
+            title: quiz.title || 'Untitled Quiz',
+            score: quiz.score,
+            completedAt: quiz.completedAt || new Date().toISOString().split('T')[0],
+            duration: quiz.duration || '25 min',
+            icon: BookOpen,
+          })) || []),
+          ...(interviewsData?.slice(0, 2).map((interview, index) => ({
+            id: `interview-${index}`,
+            type: 'interview',
+            title: interview.jobRole || 'Interview Session',
+            completedAt: interview.completedAt || new Date().toISOString().split('T')[0],
+            duration: interview.duration || '45 min',
+            icon: Brain,
+          })) || [])
+        ].sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt)).slice(0, 4);
+
+        setRecentActivities(activities);
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
 
   const quickActions = [
     {

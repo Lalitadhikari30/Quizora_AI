@@ -1,60 +1,68 @@
 package com.quizora.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
+@Table(name = "interview_sessions")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class InterviewSession {
-
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    
+    @Column(nullable = false)
     private String userId;
-    private String role;
-    private String topics;
-
+    
+    @Column(nullable = false)
+    private String jobRole;
+    
+    @Column(nullable = false)
+    private String experience;
+    
+    @Column(nullable = false)
+    private String difficulty;
+    
+    @Column(name = "first_question")
+    private String firstQuestion;
+    
+    @Column(name = "current_question_index")
+    private Integer currentQuestionIndex = 0;
+    
+    @Column(name = "total_questions")
+    private Integer totalQuestions = 10;
+    
+    @Column(name = "session_status")
     @Enumerated(EnumType.STRING)
-    private Difficulty difficulty;
-
-    private LocalDateTime startTime;
-    private LocalDateTime completionTime;
-
-    private Boolean isActive = true;
-
-    private int currentQuestionIndex;
-    private int totalScore;
-
-    public InterviewSession() {}
-
-    // getters and setters
-
-    public Long getId() { return id; }
-
-    public String getUserId() { return userId; }
-    public void setUserId(String userId) { this.userId = userId; }
-
-    public String getRole() { return role; }
-    public void setRole(String role) { this.role = role; }
-
-    public String getTopics() { return topics; }
-    public void setTopics(String topics) { this.topics = topics; }
-
-    public Difficulty getDifficulty() { return difficulty; }
-    public void setDifficulty(Difficulty difficulty) { this.difficulty = difficulty; }
-
-    public LocalDateTime getStartTime() { return startTime; }
-    public void setStartTime(LocalDateTime startTime) { this.startTime = startTime; }
-
-    public LocalDateTime getCompletionTime() { return completionTime; }
-    public void setCompletionTime(LocalDateTime completionTime) { this.completionTime = completionTime; }
-
-    public Boolean getIsActive() { return isActive; }
-    public void setIsActive(Boolean active) { isActive = active; }
-
-    public int getCurrentQuestionIndex() { return currentQuestionIndex; }
-    public void setCurrentQuestionIndex(int currentQuestionIndex) { this.currentQuestionIndex = currentQuestionIndex; }
-
-    public int getTotalScore() { return totalScore; }
-    public void setTotalScore(int totalScore) { this.totalScore = totalScore; }
+    private SessionStatus status = SessionStatus.ACTIVE;
+    
+    @Column(name = "started_at")
+    @CreationTimestamp
+    private LocalDateTime startedAt;
+    
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+    
+    @Column(name = "updated_at")
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
+    
+    @OneToMany(mappedBy = "interviewSession", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<InterviewResponse> responses;
+    
+    public enum SessionStatus {
+        ACTIVE,
+        COMPLETED,
+        ABANDONED
+    }
 }

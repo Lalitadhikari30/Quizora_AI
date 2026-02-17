@@ -6,7 +6,8 @@ public class InterviewStartRequest {
     @NotBlank
     private String role;
     
-    private String topics;
+    @NotBlank
+    private String experience;
     
     @NotBlank
     private String difficulty; // BEGINNER, INTERMEDIATE, ADVANCED
@@ -15,8 +16,8 @@ public class InterviewStartRequest {
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
     
-    public String getTopics() { return topics; }
-    public void setTopics(String topics) { this.topics = topics; }
+    public String getExperience() { return experience; }
+    public void setExperience(String experience) { this.experience = experience; }
     
     public String getDifficulty() { return difficulty; }
     public void setDifficulty(String difficulty) { this.difficulty = difficulty; }

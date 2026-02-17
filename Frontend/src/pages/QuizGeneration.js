@@ -4,6 +4,8 @@ import { useDropzone } from 'react-dropzone';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import { quizService } from '../services/quizService';
+import { fileService } from '../services/fileService';
 
 const QuizGeneration = () => {
   const navigate = useNavigate();
@@ -36,8 +38,13 @@ const QuizGeneration = () => {
   const onDrop = useCallback((acceptedFiles) => {
     const file = acceptedFiles[0];
     if (file) {
-      setUploadedFile(file);
-      toast.success('File uploaded successfully!');
+      try {
+        fileService.validateFile(file);
+        setUploadedFile(file);
+        toast.success('File uploaded successfully!');
+      } catch (error) {
+        toast.error(error.message);
+      }
     }
   }, []);
 
@@ -49,11 +56,24 @@ const QuizGeneration = () => {
   const onSubmit = async (data) => {
     setIsGenerating(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      let quizData = { ...data };
+
+      // Handle file upload if in import tab
+      if (activeTab === 'import' && uploadedFile) {
+        const uploadResponse = await fileService.uploadFileForQuiz(uploadedFile, data);
+        quizData.sourceContent = uploadResponse.publicUrl;
+        quizData.sourceType = 'FILE';
+      } else if (activeTab === 'import' && importLink) {
+        quizData.sourceContent = importLink;
+        quizData.sourceType = 'URL';
+      }
+
+      const response = await quizService.generateQuiz(quizData);
+      
       toast.success('Quiz generated successfully!');
-      navigate('/quiz/123');
+      navigate(`/quiz/${response.id}`);
     } catch (error) {
-      toast.error('Failed to generate quiz.');
+      toast.error(error.message || 'Failed to generate quiz.');
     } finally {
       setIsGenerating(false);
     }

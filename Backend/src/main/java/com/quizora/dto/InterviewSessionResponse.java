@@ -5,37 +5,41 @@ import java.time.LocalDateTime;
 public class InterviewSessionResponse {
 
     private Long sessionId;
-    private String role;
-    private String topics;
+    private String jobRole;
+    private String experience;
     private String difficulty;
-    private LocalDateTime startTime;
-    private Boolean isActive;
-    private int currentQuestionIndex;
-    private int totalScore;
+    private String firstQuestion;
+    private Integer totalQuestions;
+    private LocalDateTime startedAt;
+    private Boolean active;
+    private Integer currentQuestionIndex;
 
     public InterviewSessionResponse(){}
 
     public Long getSessionId() { return sessionId; }
     public void setSessionId(Long sessionId) { this.sessionId = sessionId; }
 
-    public String getRole() { return role; }
-    public void setRole(String role) { this.role = role; }
+    public String getJobRole() { return jobRole; }
+    public void setJobRole(String jobRole) { this.jobRole = jobRole; }
 
-    public String getTopics() { return topics; }
-    public void setTopics(String topics) { this.topics = topics; }
+    public String getExperience() { return experience; }
+    public void setExperience(String experience) { this.experience = experience; }
 
     public String getDifficulty() { return difficulty; }
     public void setDifficulty(String difficulty) { this.difficulty = difficulty; }
 
-    public LocalDateTime getStartTime() { return startTime; }
-    public void setStartTime(LocalDateTime startTime) { this.startTime = startTime; }
+    public String getFirstQuestion() { return firstQuestion; }
+    public void setFirstQuestion(String firstQuestion) { this.firstQuestion = firstQuestion; }
 
-    public Boolean getIsActive() { return isActive; }
-    public void setIsActive(Boolean active) { isActive = active; }
+    public Integer getTotalQuestions() { return totalQuestions; }
+    public void setTotalQuestions(Integer totalQuestions) { this.totalQuestions = totalQuestions; }
 
-    public int getCurrentQuestionIndex() { return currentQuestionIndex; }
-    public void setCurrentQuestionIndex(int currentQuestionIndex) { this.currentQuestionIndex = currentQuestionIndex; }
+    public LocalDateTime getStartedAt() { return startedAt; }
+    public void setStartedAt(LocalDateTime startedAt) { this.startedAt = startedAt; }
 
-    public int getTotalScore() { return totalScore; }
-    public void setTotalScore(int totalScore) { this.totalScore = totalScore; }
+    public Boolean getActive() { return active; }
+    public void setActive(Boolean active) { this.active = active; }
+
+    public Integer getCurrentQuestionIndex() { return currentQuestionIndex; }
+    public void setCurrentQuestionIndex(Integer currentQuestionIndex) { this.currentQuestionIndex = currentQuestionIndex; }
 }

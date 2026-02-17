@@ -3,10 +3,12 @@ com\quizora\service\InterviewService.class
 com\quizora\dto\QuizResultResponse.class
 com\quizora\service\ContentExtractionService$1.class
 com\quizora\service\FileUploadService.class
+com\quizora\entity\InterviewSession$SessionStatus.class
 com\quizora\config\SecurityConfig.class
 com\quizora\dto\QuestionResponse.class
 com\quizora\entity\QuizType.class
 com\quizora\service\QuizService.class
+com\quizora\controller\AuthController.class
 com\quizora\entity\QuizAttempt.class
 com\quizora\entity\InterviewResponse.class
 com\quizora\dto\InterviewReportResponse.class

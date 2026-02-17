@@ -2,6 +2,7 @@ import { Brain, CheckCircle, Clock, MessageSquare, Mic, Play, RotateCcw, Video }
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import { interviewService } from '../services/interviewService';
 
 const Interview = () => {
   const navigate = useNavigate();
@@ -11,14 +12,62 @@ const Interview = () => {
     experience: '',
     difficulty: 'INTERMEDIATE'
   });
+  const [currentSession, setCurrentSession] = useState(null);
+  const [currentQuestion, setCurrentQuestion] = useState('');
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const [totalQuestions, setTotalQuestions] = useState(10);
+  const [userAnswer, setUserAnswer] = useState('');
 
-  const startInterview = () => {
+  const startInterview = async () => {
     if (!setupData.jobRole || !setupData.experience) {
       toast.error('Please fill in all required fields');
       return;
     }
-    setShowSetup(false);
-    toast.success('Interview started!');
+
+    try {
+      const session = await interviewService.startInterview(setupData);
+      setCurrentSession(session);
+      setCurrentQuestion(session.firstQuestion || 'Tell me about your experience with React and how you\'ve used it in your previous projects.');
+      setShowSetup(false);
+      toast.success('Interview started!');
+    } catch (error) {
+      toast.error(error.message || 'Failed to start interview');
+    }
+  };
+
+  const submitAnswer = async () => {
+    if (!userAnswer.trim() || !currentSession) {
+      toast.error('Please provide an answer');
+      return;
+    }
+
+    try {
+      await interviewService.submitAnswer(currentSession.id, currentQuestion, userAnswer);
+      
+      // Move to next question or end interview
+      if (questionIndex < totalQuestions - 1) {
+        setQuestionIndex(questionIndex + 1);
+        setCurrentQuestion(`What is your experience with ${setupData.jobRole} technologies?`);
+        setUserAnswer('');
+      } else {
+        endInterview();
+      }
+    } catch (error) {
+      toast.error(error.message || 'Failed to submit answer');
+    }
+  };
+
+  const endInterview = async () => {
+    if (!currentSession) return;
+
+    try {
+      const report = await interviewService.getInterviewReport(currentSession.id);
+      toast.success('Interview completed! Generating report...');
+      // Navigate to results page or show report
+      navigate('/performance');
+    } catch (error) {
+      toast.error(error.message || 'Failed to complete interview');
+    }
   };
 
   if (showSetup) {
@@ -141,8 +190,17 @@ const Interview = () => {
               <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
                 <h3 className="text-lg font-semibold text-white mb-4 font-mono text-left">Current Question</h3>
                 <p className="text-gray-300 mb-6 font-mono text-left">
-                  Tell me about your experience with React and how you've used it in your previous projects.
+                  {currentQuestion}
                 </p>
+                
+                <textarea
+                  value={userAnswer}
+                  onChange={(e) => setUserAnswer(e.target.value)}
+                  placeholder="Type your answer here..."
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20 font-mono mb-4"
+                  rows={4}
+                />
+                
                 <div className="flex items-center space-x-4">
                   <button className="p-2 bg-white/5 border border-white/10 rounded-lg hover:border-orange-400/50 transition-all">
                     <Mic size={16} className="text-gray-400" />
@@ -150,7 +208,10 @@ const Interview = () => {
                   <button className="p-2 bg-white/5 border border-white/10 rounded-lg hover:border-orange-400/50 transition-all">
                     <MessageSquare size={16} className="text-gray-400" />
                   </button>
-                  <button className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-400 transition-colors font-mono">
+                  <button 
+                    onClick={submitAnswer}
+                    className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-400 transition-colors font-mono"
+                  >
                     Next Question
                   </button>
                 </div>
@@ -186,17 +247,17 @@ const Interview = () => {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-gray-400 text-sm font-mono text-left">Questions Answered</span>
-                    <span className="text-orange-400 text-sm font-medium font-mono text-right">3/10</span>
+                    <span className="text-orange-400 text-sm font-medium font-mono text-right">{questionIndex + 1}/{totalQuestions}</span>
                   </div>
                   <div className="w-full bg-white/10 rounded-full h-2">
-                    <div className="bg-gradient-to-r from-orange-500 to-orange-600 h-2 rounded-full" style={{width: '30%'}}></div>
+                    <div className="bg-gradient-to-r from-orange-500 to-orange-600 h-2 rounded-full" style={{width: `${((questionIndex + 1) / totalQuestions) * 100}%`}}></div>
                   </div>
                   <div className="space-y-2 mt-4">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                      <div key={num} className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-                        num <= 3 ? 'bg-orange-500 text-white' : 'bg-white/10 text-gray-500'
+                    {Array.from({length: totalQuestions}, (_, i) => (
+                      <div key={i} className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
+                        i <= questionIndex ? 'bg-orange-500 text-white' : 'bg-white/10 text-gray-500'
                       }`}>
-                        {num <= 3 ? <CheckCircle size={12} /> : num}
+                        {i <= questionIndex ? <CheckCircle size={12} /> : i + 1}
                       </div>
                     ))}
                   </div>
@@ -204,7 +265,10 @@ const Interview = () => {
               </div>
 
               {/* End Interview */}
-              <button className="w-full py-3 px-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors font-mono">
+              <button 
+                onClick={endInterview}
+                className="w-full py-3 px-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors font-mono"
+              >
                 End Interview
               </button>
             </div>

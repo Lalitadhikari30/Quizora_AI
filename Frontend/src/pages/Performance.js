@@ -4,7 +4,7 @@ import {
   Clock,
   Target
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   CartesianGrid,
   Cell,
@@ -17,32 +17,64 @@ import {
   XAxis,
   YAxis
 } from "recharts";
+import { performanceService } from '../services/performanceService';
 
 const Performance = () => {
   const [timeRange, setTimeRange] = useState("month");
+  const [performanceData, setPerformanceData] = useState([]);
+  const [categoryData, setCategoryData] = useState([]);
+  const [stats, setStats] = useState({
+    totalQuizzes: 0,
+    averageScore: 0,
+    studyStreak: 0,
+    totalStudyTime: 0,
+    improvement: 0
+  });
+  const [loading, setLoading] = useState(true);
 
-  const performanceData = [
-    { date: "Jan 1", score: 75 },
-    { date: "Jan 8", score: 82 },
-    { date: "Jan 15", score: 78 },
-    { date: "Jan 22", score: 85 },
-    { date: "Jan 29", score: 88 }
-  ];
+  useEffect(() => {
+    const fetchPerformanceData = async () => {
+      try {
+        const [performance, history, interviewPerf] = await Promise.all([
+          performanceService.getUserPerformance(),
+          performanceService.getPerformanceHistory(),
+          performanceService.getInterviewPerformance()
+        ]);
 
-  const categoryData = [
-    { name: "Programming", value: 45, color: "#f97316" },
-    { name: "Frontend", value: 30, color: "#fb923c" },
-    { name: "Backend", value: 15, color: "#fdba74" },
-    { name: "Database", value: 10, color: "#fed7aa" }
-  ];
+        // Set stats
+        setStats({
+          totalQuizzes: performance.totalQuizzes || 0,
+          averageScore: performance.averageScore || 0,
+          studyStreak: performance.studyStreak || 0,
+          totalStudyTime: performance.totalStudyTime || 0,
+          improvement: performance.improvement || 0
+        });
 
-  const stats = {
-    totalQuizzes: 24,
-    averageScore: 83.5,
-    studyStreak: 7,
-    totalStudyTime: 156,
-    improvement: 12.5
-  };
+        // Set performance history data (mock for now)
+        setPerformanceData([
+          { date: "Jan 1", score: 75 },
+          { date: "Jan 8", score: 82 },
+          { date: "Jan 15", score: 78 },
+          { date: "Jan 22", score: 85 },
+          { date: "Jan 29", score: performance.averageScore || 88 }
+        ]);
+
+        // Set category data (mock for now)
+        setCategoryData([
+          { name: "Programming", value: 45, color: "#f97316" },
+          { name: "Frontend", value: 30, color: "#fb923c" },
+          { name: "Backend", value: 15, color: "#fdba74" },
+          { name: "Database", value: 10, color: "#fed7aa" }
+        ]);
+      } catch (error) {
+        console.error('Failed to fetch performance data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPerformanceData();
+  }, [timeRange]);
 
   return (
     <section className="bg-[#0a0a0a] min-h-screen py-12 font-geist">

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
+import { authService } from '../services/authService';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -22,18 +23,12 @@ const Register = () => {
   const onSubmit = async (data) => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock successful registration
-      localStorage.setItem('token', 'mock-jwt-token');
-      localStorage.setItem('userName', `${data.firstName} ${data.lastName}`);
+      const response = await authService.register(data);
       
       toast.success('Registration Successful! Welcome to Quizora AI');
-
       navigate('/dashboard');
     } catch (error) {
-      toast.error('Registration Failed: Please try again.');
+      toast.error(error.message || 'Registration Failed: Please try again.');
     } finally {
       setIsLoading(false);
     }

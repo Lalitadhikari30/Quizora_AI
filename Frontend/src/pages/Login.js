@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
+import { authService } from '../services/authService';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -18,18 +19,12 @@ const Login = () => {
   const onSubmit = async (data) => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock successful login
-      localStorage.setItem('token', 'mock-jwt-token');
-      localStorage.setItem('userName', 'John Doe');
+      const response = await authService.login(data);
       
       toast.success('Login Successful! Welcome back to Quizora AI');
-
       navigate('/dashboard');
     } catch (error) {
-      toast.error('Login Failed: Invalid email or password. Please try again.');
+      toast.error(error.message || 'Login Failed: Invalid email or password. Please try again.');
     } finally {
       setIsLoading(false);
     }

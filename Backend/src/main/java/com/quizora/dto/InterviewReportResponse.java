@@ -4,12 +4,11 @@ import java.time.LocalDateTime;
 
 public class InterviewReportResponse {
     private String userId;
-    private String role;
-    private String topics;
+    private String jobRole;
+    private String experience;
     private String difficulty;
-    private LocalDateTime startTime;
-    private LocalDateTime completionTime;
-    private Integer totalScore;
+    private LocalDateTime startedAt;
+    private LocalDateTime completedAt;
     private String finalFeedback;
     private Integer totalQuestions;
     private Integer correctAnswers;
@@ -19,23 +18,20 @@ public class InterviewReportResponse {
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
     
-    public String getRole() { return role; }
-    public void setRole(String role) { this.role = role; }
+    public String getJobRole() { return jobRole; }
+    public void setJobRole(String jobRole) { this.jobRole = jobRole; }
     
-    public String getTopics() { return topics; }
-    public void setTopics(String topics) { this.topics = topics; }
+    public String getExperience() { return experience; }
+    public void setExperience(String experience) { this.experience = experience; }
     
     public String getDifficulty() { return difficulty; }
     public void setDifficulty(String difficulty) { this.difficulty = difficulty; }
     
-    public LocalDateTime getStartTime() { return startTime; }
-    public void setStartTime(LocalDateTime startTime) { this.startTime = startTime; }
+    public LocalDateTime getStartedAt() { return startedAt; }
+    public void setStartedAt(LocalDateTime startedAt) { this.startedAt = startedAt; }
     
-    public LocalDateTime getCompletionTime() { return completionTime; }
-    public void setCompletionTime(LocalDateTime completionTime) { this.completionTime = completionTime; }
-    
-    public Integer getTotalScore() { return totalScore; }
-    public void setTotalScore(Integer totalScore) { this.totalScore = totalScore; }
+    public LocalDateTime getCompletedAt() { return completedAt; }
+    public void setCompletedAt(LocalDateTime completedAt) { this.completedAt = completedAt; }
     
     public String getFinalFeedback() { return finalFeedback; }
     public void setFinalFeedback(String finalFeedback) { this.finalFeedback = finalFeedback; }
@@ -59,7 +55,7 @@ public class InterviewReportResponse {
     }
     
     public void setStrongestTopics(String topics) {
-        this.topics = topics;
+        this.experience = topics; // Reuse field
     }
     
     public void setImprovementAreas(String areas) {

@@ -17,10 +17,10 @@ public class AiIntegrationService {
     
     private static final Logger logger = LoggerFactory.getLogger(AiIntegrationService.class);
     
-    @Value("${ai.api.url}")
+    @Value("${AI_API_URL}")
     private String aiApiUrl;
     
-    @Value("${ai.api.key}")
+    @Value("${AI_API_KEY}")
     private String aiApiKey;
     
     private final WebClient webClient;
@@ -61,6 +61,68 @@ public class AiIntegrationService {
         }
     }
 
+    public List<String> generateInterviewQuestions(String jobRole, String experience, String difficulty) {
+        try {
+            String prompt = buildInterviewPrompt(jobRole, experience, difficulty);
+            
+            Map<String, Object> requestBody = Map.of(
+                "contents", List.of(
+                    Map.of(
+                        "parts", List.of(
+                            Map.of("text", prompt)
+                        )
+                    )
+                )
+            );
+            
+            String response = webClient.post()
+                    .uri(aiApiUrl)
+                    .header("Content-Type", "application/json")
+                    .header("x-goog-api-key", aiApiKey)
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+            
+            return parseInterviewQuestions(response);
+            
+        } catch (Exception e) {
+            logger.error("Failed to generate interview questions", e);
+            throw new RuntimeException("Failed to generate interview questions: " + e.getMessage());
+        }
+    }
+
+    public String analyzeInterviewAnswer(String question, String userAnswer, String jobRole) {
+        try {
+            String prompt = buildAnswerAnalysisPrompt(question, userAnswer, jobRole);
+            
+            Map<String, Object> requestBody = Map.of(
+                "contents", List.of(
+                    Map.of(
+                        "parts", List.of(
+                            Map.of("text", prompt)
+                        )
+                    )
+                )
+            );
+            
+            String response = webClient.post()
+                    .uri(aiApiUrl)
+                    .header("Content-Type", "application/json")
+                    .header("x-goog-api-key", aiApiKey)
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+            
+            return parseAnswerAnalysis(response);
+            
+        } catch (Exception e) {
+            logger.error("Failed to analyze interview answer", e);
+            throw new RuntimeException("Failed to analyze answer: " + e.getMessage());
+        }
+    }
+
     private String buildQuizPrompt(String content, int questionCount, String difficulty, String topics) {
         return String.format(
             "Generate %d quiz questions from the following content:\n\nContent: %s\n\nDifficulty: %s\n\nTopics: %s\n\n" +
@@ -73,6 +135,81 @@ public class AiIntegrationService {
             "Return only valid JSON array of questions.",
             questionCount, content, difficulty, topics
         );
+    }
+
+    private String buildInterviewPrompt(String jobRole, String experience, String difficulty) {
+        return String.format(
+            "Generate 10 interview questions for a %s position with %s experience level at %s difficulty.\n\n" +
+            "Requirements:\n" +
+            "1. Questions should be relevant to the job role\n" +
+            "2. Mix of technical and behavioral questions\n" +
+            "3. Questions should test practical knowledge\n" +
+            "4. Include questions about problem-solving and experience\n" +
+            "5. Format as a numbered list\n\n" +
+            "Return only the questions, one per line.",
+            jobRole, experience, difficulty
+        );
+    }
+
+    private String buildAnswerAnalysisPrompt(String question, String userAnswer, String jobRole) {
+        return String.format(
+            "Analyze the following interview answer for a %s position:\n\n" +
+            "Question: %s\n" +
+            "User Answer: %s\n\n" +
+            "Provide analysis in the following format:\n" +
+            "1. Score (1-10)\n" +
+            "2. Strengths (what was good)\n" +
+            "3. Areas for improvement\n" +
+            "4. Suggested better answer\n\n" +
+            "Be constructive and specific in your feedback.",
+            jobRole, question, userAnswer
+        );
+    }
+
+    private List<String> parseInterviewQuestions(String response) {
+        try {
+            JsonNode root = objectMapper.readTree(response);
+            JsonNode candidates = root.path("candidates");
+            
+            if (candidates.isArray() && candidates.size() > 0) {
+                JsonNode content = candidates.get(0).path("content");
+                if (content != null) {
+                    String text = content.asText();
+                    List<String> questions = new ArrayList<>();
+                    String[] lines = text.split("\n");
+                    
+                    for (String line : lines) {
+                        line = line.trim();
+                        if (!line.isEmpty() && Character.isDigit(line.charAt(0))) {
+                            questions.add(line.replaceFirst("^\\d+\\.\\s*", ""));
+                        }
+                    }
+                    return questions;
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Failed to parse interview questions", e);
+        }
+        
+        return new ArrayList<>();
+    }
+
+    private String parseAnswerAnalysis(String response) {
+        try {
+            JsonNode root = objectMapper.readTree(response);
+            JsonNode candidates = root.path("candidates");
+            
+            if (candidates.isArray() && candidates.size() > 0) {
+                JsonNode content = candidates.get(0).path("content");
+                if (content != null) {
+                    return content.asText();
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Failed to parse answer analysis", e);
+        }
+        
+        return "Unable to analyze answer at this time.";
     }
 
     private List<String> parseQuizQuestions(String response) {

@@ -16,15 +16,14 @@ public interface InterviewSessionRepository extends JpaRepository<InterviewSessi
 
     List<InterviewSession> findByUserId(String userId);
 
-   List<InterviewSession> findByUserIdOrderByStartTimeDesc(String userId);
-
+    List<InterviewSession> findByUserIdOrderByStartedAtDesc(String userId);
 
     Optional<InterviewSession> findByIdAndUserId(Long id, String userId);
 
-    @Query("SELECT i FROM InterviewSession i WHERE i.userId = :userId AND i.isActive = true")
+    @Query("SELECT i FROM InterviewSession i WHERE i.userId = :userId AND i.status = 'ACTIVE'")
     List<InterviewSession> findActiveByUserId(@Param("userId") String userId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT i FROM InterviewSession i WHERE i.userId = :userId AND i.isActive = true")
+    @Query("SELECT i FROM InterviewSession i WHERE i.userId = :userId AND i.status = 'ACTIVE'")
     Optional<InterviewSession> findActiveByUserIdForUpdate(@Param("userId") String userId);
 }

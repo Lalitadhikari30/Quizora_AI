@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,24 +40,30 @@ public class InterviewService {
         try {
             InterviewSession session = new InterviewSession();
             session.setUserId(userId);
-            session.setRole(request.getRole());
-            session.setTopics(request.getTopics());
-            session.setDifficulty(Difficulty.valueOf(request.getDifficulty()));
+            session.setJobRole(request.getRole());
+            session.setExperience(request.getExperience());
+            session.setDifficulty(request.getDifficulty());
+            session.setTotalQuestions(10);
+            session.setCurrentQuestionIndex(0);
+            session.setStatus(InterviewSession.SessionStatus.ACTIVE);
+            
+            // Generate first question using AI
+            List<String> questions = generateMockQuestions(request.getRole(), request.getExperience(), request.getDifficulty());
+            session.setFirstQuestion(questions.get(0));
             
             session = interviewSessionRepository.save(session);
             
             InterviewSessionResponse response = new InterviewSessionResponse();
             response.setSessionId(session.getId());
-            response.setRole(session.getRole());
-            response.setTopics(session.getTopics());
-            response.setDifficulty(session.getDifficulty().toString());
-            response.setStartTime(session.getStartTime());
-            response.setIsActive(session.getIsActive());
-            response.setCurrentQuestionIndex(session.getCurrentQuestionIndex());
-            response.setTotalScore(session.getTotalScore());
+            response.setJobRole(session.getJobRole());
+            response.setExperience(session.getExperience());
+            response.setDifficulty(session.getDifficulty());
+            response.setFirstQuestion(session.getFirstQuestion());
+            response.setTotalQuestions(session.getTotalQuestions());
+            response.setStartedAt(session.getStartedAt());
+            response.setActive(session.getStatus() == InterviewSession.SessionStatus.ACTIVE);
             
             logger.info("Started interview session {} for user: {}", session.getId(), userId);
-            
             return response;
             
         } catch (Exception e) {
@@ -90,9 +97,6 @@ public class InterviewService {
             
             // Update session progress
             session.setCurrentQuestionIndex(session.getCurrentQuestionIndex() + 1);
-            if (isCorrect) {
-                session.setTotalScore(session.getTotalScore() + 1);
-            }
             
             interviewSessionRepository.save(session);
             
@@ -153,8 +157,8 @@ public class InterviewService {
             
             List<InterviewResponse> responses = interviewResponseRepository.findByInterviewSessionIdOrderById(sessionId);
             
-            session.setCompletionTime(LocalDateTime.now());
-            session.setIsActive(false);
+            session.setCompletedAt(LocalDateTime.now());
+            session.setStatus(InterviewSession.SessionStatus.COMPLETED);
             interviewSessionRepository.save(session);
             
             // Generate final feedback using AI
@@ -165,12 +169,11 @@ public class InterviewService {
             
             InterviewReportResponse report = new InterviewReportResponse();
             report.setUserId(userId);
-            report.setRole(session.getRole());
-            report.setTopics(session.getTopics());
-            report.setDifficulty(session.getDifficulty().toString());
-            report.setStartTime(session.getStartTime());
-            report.setCompletionTime(session.getCompletionTime());
-            report.setTotalScore(session.getTotalScore());
+            report.setJobRole(session.getJobRole());
+            report.setExperience(session.getExperience());
+            report.setDifficulty(session.getDifficulty());
+            report.setStartedAt(session.getStartedAt());
+            report.setCompletedAt(session.getCompletedAt());
             report.setFinalFeedback(feedback);
             report.setTotalQuestions(responses.size());
             
@@ -233,11 +236,15 @@ public class InterviewService {
             int totalInterviews = performance.getTotalInterviewsTaken() + 1;
             performance.setTotalInterviewsTaken(totalInterviews);
             
+            // Calculate current score based on correct answers
+            long currentScore = responses.stream()
+                    .mapToInt(r -> r.getIsCorrect() ? 1 : 0)
+                    .sum();
+            
             // Update average score
-            int currentScore = session.getTotalScore();
             double previousTotal = performance.getAverageInterviewScore() != null ? 
-                    performance.getAverageInterviewScore() * performance.getTotalInterviewsTaken() : 0.0;
-            performance.setAverageInterviewScore((double) (previousTotal + currentScore) / totalInterviews);
+                    performance.getAverageInterviewScore() * (totalInterviews - 1) : 0.0;
+            performance.setAverageInterviewScore((previousTotal + currentScore) / totalInterviews);
             
             performance.setLastUpdated(LocalDateTime.now());
             userPerformanceRepository.save(performance);
@@ -248,22 +255,36 @@ public class InterviewService {
     }
 
     public List<InterviewSessionResponse> getUserInterviews(String userId) {
-        List<InterviewSession> sessions = interviewSessionRepository.findByUserIdOrderByStartTimeDesc(userId);
+        List<InterviewSession> sessions = interviewSessionRepository.findByUserIdOrderByStartedAtDesc(userId);
 
-        
         return sessions.stream()
                 .map(session -> {
                     InterviewSessionResponse response = new InterviewSessionResponse();
                     response.setSessionId(session.getId());
-                    response.setRole(session.getRole());
-                    response.setTopics(session.getTopics());
-                    response.setDifficulty(session.getDifficulty().toString());
-                    response.setStartTime(session.getStartTime());
-                    response.setIsActive(session.getIsActive());
+                    response.setJobRole(session.getJobRole());
+                    response.setExperience(session.getExperience());
+                    response.setDifficulty(session.getDifficulty());
+                    response.setStartedAt(session.getStartedAt());
+                    response.setActive(session.getStatus() == InterviewSession.SessionStatus.ACTIVE);
                     response.setCurrentQuestionIndex(session.getCurrentQuestionIndex());
-                    response.setTotalScore(session.getTotalScore());
                     return response;
                 })
                 .collect(Collectors.toList());
+    }
+
+    private List<String> generateMockQuestions(String jobRole, String experience, String difficulty) {
+        // Mock questions - in production, this would call the AI service
+        return Arrays.asList(
+            "Tell me about your experience with " + jobRole + " technologies.",
+            "What challenges have you faced in your " + experience + " role?",
+            "How do you stay updated with the latest " + jobRole + " trends?",
+            "Describe a complex problem you solved recently.",
+            "What's your approach to debugging " + jobRole + " issues?",
+            "How do you handle tight deadlines?",
+            "What's your experience with team collaboration?",
+            "How do you ensure code quality?",
+            "What motivates you in your work?",
+            "Where do you see yourself in 5 years?"
+        );
     }
 }

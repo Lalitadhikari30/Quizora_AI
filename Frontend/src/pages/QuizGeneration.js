@@ -9,6 +9,7 @@ const QuizGeneration = () => {
   const navigate = useNavigate();
   const [isGenerating, setIsGenerating] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
+  const [importLink, setImportLink] = useState('');
   const [activeTab, setActiveTab] = useState('create');
 
   const {
@@ -36,10 +37,9 @@ const QuizGeneration = () => {
     const file = acceptedFiles[0];
     if (file) {
       setUploadedFile(file);
-      setValue('sourceContent', file.name);
       toast.success('File uploaded successfully!');
     }
-  }, [setValue]);
+  }, []);
 
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
@@ -189,6 +189,15 @@ const QuizGeneration = () => {
                   ))}
                 </div>
 
+                {/* LINK INPUT */}
+                <input
+                  type="text"
+                  placeholder="Paste YouTube / Website Link here..."
+                  value={importLink}
+                  onChange={(e) => setImportLink(e.target.value)}
+                  className="w-full mb-6 px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20 font-mono"
+                />
+
                 <div
                   {...getRootProps()}
                   className="w-full p-12 border-2 border-dashed border-white/20 rounded-lg text-center"
@@ -199,6 +208,15 @@ const QuizGeneration = () => {
                     Drop your file here or click to browse
                   </p>
                 </div>
+
+                {/* CREATE QUIZ BUTTON */}
+                <button
+                  onClick={handleSubmit(onSubmit)}
+                  disabled={isGenerating || (!uploadedFile && !importLink)}
+                  className="mt-6 w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-lg hover:from-orange-400 hover:to-orange-500 transition-all duration-200 border border-orange-500/20 flex items-center justify-center font-mono disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGenerating ? 'Generating Quiz...' : 'Create Quiz'}
+                </button>
 
               </div>
             </div>

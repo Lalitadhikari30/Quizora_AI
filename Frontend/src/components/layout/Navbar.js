@@ -9,26 +9,22 @@ import {
     User,
     X
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const { isAuthenticated } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    setIsAuthenticated(!!token);
-  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userName');
-    setIsAuthenticated(false);
     navigate('/login');
+    window.location.reload(); // Force reload to update auth state
   };
 
   const navItems = [

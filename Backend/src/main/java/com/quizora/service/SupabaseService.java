@@ -3,6 +3,7 @@ package com.quizora.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -112,21 +113,127 @@ public class SupabaseService {
             String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8.toString());
             String objectPath = userId + "/" + encodedFileName;
             
+            // Use correct Supabase upload endpoint
             String uploadUrl = String.format("%s/storage/v1/object/%s/%s", supabaseUrl, bucketName, objectPath);
             
-            String response = webClient.post()
-                    .uri(uploadUrl)
-                    .header("Authorization", "Bearer " + supabaseServiceKey)
-                    .header("Content-Type", "application/octet-stream")
-                    .bodyValue(fileData)  // Send raw bytes, not a HashMap
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .block();
+            logger.info("Uploading to Supabase URL: {}", uploadUrl);
+            logger.info("File size: {} bytes", fileData.length);
+            logger.info("Bucket name: {}", bucketName);
+            logger.info("Object path: {}", objectPath);
             
-            String publicUrl = String.format("%s/storage/v1/object/public/%s/%s", supabaseUrl, bucketName, objectPath);
-            
-            logger.info("Uploaded file to Supabase storage: {}", publicUrl);
-            return publicUrl;
+            try {
+                // Use correct Supabase upload format
+                String response = webClient.post()
+                        .uri(uploadUrl)
+                        .header("Authorization", "Bearer " + supabaseServiceKey)
+                        .header("Content-Type", "application/octet-stream")
+                        .bodyValue(fileData)
+                        .retrieve()
+                        .bodyToMono(String.class)
+                        .block();
+                
+                String publicUrl = String.format("%s/storage/v1/object/public/%s/%s", supabaseUrl, bucketName, objectPath);
+                
+                logger.info("Uploaded file to Supabase storage: {}", publicUrl);
+                logger.info("Supabase response: {}", response);
+                return publicUrl;
+                
+            } catch (Exception uploadError) {
+                logger.warn("Supabase upload failed: {}", uploadError.getMessage());
+                logger.warn("Upload error type: {}", uploadError.getClass().getSimpleName());
+                
+                // Try to create bucket if it doesn't exist - use correct endpoint
+                try {
+                    logger.info("Attempting to create bucket: {}", bucketName);
+                    String createBucketUrl = String.format("%s/storage/v1/buckets", supabaseUrl);
+                    String bucketPayload = String.format("{\"id\":\"%s\",\"name\":\"%s\",\"public\":true,\"file_size_limit\":52428800,\"allowed_mime_types\":[\"*/*\"]}", bucketName, bucketName);
+                    
+                    String createResponse = webClient.post()
+                            .uri(createBucketUrl)
+                            .header("Authorization", "Bearer " + supabaseServiceKey)
+                            .header("Content-Type", "application/json")
+                            .bodyValue(bucketPayload)
+                            .retrieve()
+                            .bodyToMono(String.class)
+                            .block();
+                    
+                    logger.info("Created bucket: {}", createResponse);
+                    
+                    // Set bucket policies to allow public access and uploads
+                    try {
+                        logger.info("Setting bucket policies for public access and uploads...");
+                        String policyUrl = String.format("%s/storage/v1/buckets/%s/policy", supabaseUrl, bucketName);
+                        
+                        // Policy for SELECT operations (public access)
+                        String selectPolicyPayload = String.format("{\"name\":\"Public Select Access\",\"definition\":{\"roles\":[\"anon\",\"authenticated\"],\"type\":\"select\",\"table\":\"storage.objects\",\"query\":{\"eq\":{\"bucket_id\":\"%s\"}}}}", bucketName);
+                        
+                        // Policy for INSERT operations (file uploads)
+                        String insertPolicyPayload = String.format("{\"name\":\"Upload Access\",\"definition\":{\"roles\":[\"authenticated\"],\"type\":\"insert\",\"table\":\"storage.objects\",\"query\":{\"eq\":{\"bucket_id\":\"%s\"}}}}", bucketName);
+                        
+                        // Policy for UPDATE operations (file updates)
+                        String updatePolicyPayload = String.format("{\"name\":\"Update Access\",\"definition\":{\"roles\":[\"authenticated\"],\"type\":\"update\",\"table\":\"storage.objects\",\"query\":{\"eq\":{\"bucket_id\":\"%s\"}}}}", bucketName);
+                        
+                        // Apply SELECT policy
+                        String selectResponse = webClient.post()
+                                .uri(policyUrl)
+                                .header("Authorization", "Bearer " + supabaseServiceKey)
+                                .header("Content-Type", "application/json")
+                                .bodyValue(selectPolicyPayload)
+                                .retrieve()
+                                .bodyToMono(String.class)
+                                .block();
+                        
+                        logger.info("Set SELECT policy: {}", selectResponse);
+                        
+                        // Apply INSERT policy
+                        String insertResponse = webClient.post()
+                                .uri(policyUrl)
+                                .header("Authorization", "Bearer " + supabaseServiceKey)
+                                .header("Content-Type", "application/json")
+                                .bodyValue(insertPolicyPayload)
+                                .retrieve()
+                                .bodyToMono(String.class)
+                                .block();
+                        
+                        logger.info("Set INSERT policy: {}", insertResponse);
+                        
+                        // Apply UPDATE policy
+                        String updateResponse = webClient.post()
+                                .uri(policyUrl)
+                                .header("Authorization", "Bearer " + supabaseServiceKey)
+                                .header("Content-Type", "application/json")
+                                .bodyValue(updatePolicyPayload)
+                                .retrieve()
+                                .bodyToMono(String.class)
+                                .block();
+                        
+                        logger.info("Set UPDATE policy: {}", updateResponse);
+                    } catch (Exception policyError) {
+                        logger.warn("Failed to set bucket policy: {}", policyError.getMessage());
+                    }
+                    
+                    // Now try uploading again
+                    logger.info("Retrying upload after bucket creation...");
+                    String response = webClient.post()
+                            .uri(uploadUrl)
+                            .header("Authorization", "Bearer " + supabaseServiceKey)
+                            .header("Content-Type", "application/octet-stream")
+                            .bodyValue(fileData)
+                            .retrieve()
+                            .bodyToMono(String.class)
+                            .block();
+                    
+                    String publicUrl = String.format("%s/storage/v1/object/public/%s/%s", supabaseUrl, bucketName, objectPath);
+                    
+                    logger.info("Uploaded file to Supabase after bucket creation: {}", publicUrl);
+                    return publicUrl;
+                    
+                } catch (Exception bucketError) {
+                    logger.error("Failed to create or configure bucket: {}", bucketError.getMessage());
+                    logger.error("Bucket error type: {}", bucketError.getClass().getSimpleName());
+                    throw uploadError; // Throw the original upload error
+                }
+            }
             
         } catch (Exception e) {
             logger.error("Failed to upload file to Supabase", e);

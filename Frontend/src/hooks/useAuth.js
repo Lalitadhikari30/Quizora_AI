@@ -3,11 +3,14 @@ import { useEffect, useState } from 'react';
 export const useAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState('');
 
   useEffect(() => {
     const checkAuth = () => {
       const token = localStorage.getItem('token');
+      const name = localStorage.getItem('userName');
       setIsAuthenticated(!!token);
+      setUserName(name || 'User');
       setLoading(false);
     };
 
@@ -16,7 +19,7 @@ export const useAuth = () => {
 
     // Listen for storage changes (for cross-tab updates)
     const handleStorageChange = (e) => {
-      if (e.key === 'token') {
+      if (e.key === 'token' || e.key === 'userName') {
         checkAuth();
       }
     };
@@ -28,5 +31,5 @@ export const useAuth = () => {
     };
   }, []);
 
-  return { isAuthenticated, loading };
+  return { isAuthenticated, loading, userName };
 };

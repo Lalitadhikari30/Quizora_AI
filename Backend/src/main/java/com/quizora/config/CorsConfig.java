@@ -18,6 +18,18 @@ public class CorsConfig {
                         .allowedHeaders("*")
                         .allowCredentials(true);
             }
+
+            @Override
+            public void configurePathMatch(PathMatchConfigurer configurer) {
+                configurer.setUseTrailingSlashMatch(true);
+            }
+
+            @Override
+            public void addResourceHandlers(ResourceHandlerRegistry registry) {
+                // Disable default resource handling for /api paths
+                registry.addResourceHandler("/static/**")
+                        .addResourceLocations("classpath:/static/");
+            }
         };
     }
 }

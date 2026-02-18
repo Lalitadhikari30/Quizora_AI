@@ -43,9 +43,23 @@ export const authService = {
 
       // Auto-login if no email confirmation required (development mode)
       if (data.session?.access_token) {
-        localStorage.setItem('token', data.session.access_token);
-        localStorage.setItem('userName', data.user?.user_metadata?.name || data.user?.email);
+        console.log('🔍 Registration user data:', data.user);
+        console.log('🔍 User metadata:', data.user?.user_metadata);
+        console.log('🔍 Session data:', data.session);
         
+        localStorage.setItem('token', data.session.access_token);
+        localStorage.setItem('userName', data.user?.user_metadata?.name || data.user.email);
+
+        // Dispatch storage events to trigger immediate UI updates
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'token',
+          newValue: data.session.access_token
+        }));
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'userName',
+          newValue: data.user?.user_metadata?.name || data.user.email
+        }));
+
         await this.syncUserWithBackend(data.user);
         
         return {
@@ -87,11 +101,24 @@ export const authService = {
       if (error) throw new Error(error.message);
 
       if (data.session?.access_token) {
+        console.log('🔍 Login user data:', data.user);
+        console.log('🔍 Login user metadata:', data.user?.user_metadata);
+        
         localStorage.setItem('token', data.session.access_token);
         localStorage.setItem(
           'userName',
           data.user?.user_metadata?.name || data.user.email
         );
+
+        // Dispatch storage events to trigger immediate UI updates
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'token',
+          newValue: data.session.access_token
+        }));
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'userName',
+          newValue: data.user?.user_metadata?.name || data.user.email
+        }));
 
         await this.syncUserWithBackend(data.user);
       }
@@ -117,8 +144,8 @@ export const authService = {
       id: 'dev-user-' + Date.now(),
       email: credentials.email,
       user_metadata: {
-        name: credentials.email.split('@')[0],
-        firstName: 'Dev',
+        name: credentials.email.split('@')[0].charAt(0).toUpperCase() + credentials.email.split('@')[0].slice(1),
+        firstName: credentials.email.split('@')[0],
         lastName: 'User'
       }
     };
@@ -131,6 +158,16 @@ export const authService = {
     // Store in localStorage
     localStorage.setItem('token', mockSession.access_token);
     localStorage.setItem('userName', mockUser.user_metadata.name);
+
+    // Dispatch storage events to trigger immediate UI updates
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'token',
+      newValue: mockSession.access_token
+    }));
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'userName',
+      newValue: mockUser.user_metadata.name
+    }));
 
     // Sync with backend
     await this.syncUserWithBackend(mockUser);
@@ -163,6 +200,17 @@ export const authService = {
     await supabase.auth.signOut();
     localStorage.removeItem('token');
     localStorage.removeItem('userName');
+    
+    // Dispatch storage events to trigger immediate UI updates
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'token',
+      newValue: null
+    }));
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'userName',
+      newValue: null
+    }));
+    
     window.location.href = '/login';
   },
 

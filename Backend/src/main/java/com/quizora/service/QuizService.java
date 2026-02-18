@@ -34,7 +34,10 @@ public class QuizService {
     private ContentExtractionService contentExtractionService;
     
     @Autowired
-    // private AiIntegrationService aiIntegrationService;
+    private AiIntegrationService aiIntegrationService;
+    
+    @Autowired
+    private TextExtractionService textExtractionService;
     
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -239,5 +242,79 @@ public class QuizService {
                     return mapToQuizResponse(quiz, questions);
                 })
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public QuizResponse generateQuizFromText(String userId, String extractedText, String fileName) {
+        try {
+            logger.info("Generating quiz from extracted text for user: {}", userId);
+            
+            // Generate questions using AI
+            List<QuizQuestionDTO> generatedQuestions = aiIntegrationService.generateQuizFromContent(
+                extractedText,
+                "medium", // Default difficulty
+                "general", // Default topics
+                10 // Default question count
+            );
+            
+            if (generatedQuestions.isEmpty()) {
+                throw new RuntimeException("Failed to generate questions from content");
+            }
+            
+            // Create quiz entity
+            Quiz quiz = new Quiz();
+            quiz.setTitle("Quiz from " + fileName);
+            quiz.setDescription("Auto-generated quiz from uploaded file: " + fileName);
+            quiz.setUserId(userId);
+            quiz.setType(QuizType.MULTIPLE_CHOICE);
+            quiz.setSourceContent(extractedText);
+            quiz.setSourceType(SourceType.PDF); // Default to PDF for uploaded files
+            quiz.setCreatedAt(LocalDateTime.now());
+            quiz.setUpdatedAt(LocalDateTime.now());
+            
+            quiz = quizRepository.save(quiz);
+            
+            // Create questions from AI response
+            List<Question> questions = new ArrayList<>();
+            for (QuizQuestionDTO dto : generatedQuestions) {
+                Question question = new Question();
+                question.setQuiz(quiz);
+                question.setQuestionText(dto.getQuestion());
+                question.setCorrectAnswer(dto.getAnswer());
+                question.setExplanation(dto.getExplanation());
+                question.setDifficulty(getDifficultyValue(dto.getDifficulty()));
+                question.setType(QuestionType.MULTIPLE_CHOICE);
+                
+                // Convert options array to JSON string
+                String optionsJson = String.join(",", dto.getOptions());
+                question.setOptions(optionsJson);
+                
+                // Set topic tags from topics array
+                String topicsJson = String.join(",", dto.getTopics());
+                question.setTopicTags(topicsJson);
+                
+                questions.add(question);
+            }
+            
+            questionRepository.saveAll(questions);
+            
+            logger.info("Successfully created quiz with {} questions from file: {}", questions.size(), fileName);
+            
+            return mapToQuizResponse(quiz, questions);
+            
+        } catch (Exception e) {
+            logger.error("Failed to generate quiz from text", e);
+            throw new RuntimeException("Failed to generate quiz from text: " + e.getMessage());
+        }
+    }
+
+    private Integer getDifficultyValue(String difficulty) {
+        if (difficulty == null) return 2; // Default to medium
+        switch (difficulty.toLowerCase()) {
+            case "beginner": return 1;
+            case "intermediate": return 2;
+            case "advanced": return 3;
+            default: return 2; // Default to medium
+        }
     }
 }

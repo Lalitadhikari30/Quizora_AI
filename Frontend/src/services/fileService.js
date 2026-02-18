@@ -18,15 +18,17 @@ export const fileService = {
     return response.data;
   },
 
-  async uploadFileForQuiz(file, quizOptions = {}) {
-    const formData = new FormData();
-    formData.append('file', file);
-
+  async uploadFileForQuiz(formData, quizOptions = {}) {
+    // Add quiz options to FormData
     Object.keys(quizOptions).forEach(key => {
       formData.append(key, quizOptions[key]);
     });
 
-    const response = await api.post('/api/upload/quiz', formData);
+    const response = await api.post('/api/upload/quiz', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
     return response.data;
   },
 

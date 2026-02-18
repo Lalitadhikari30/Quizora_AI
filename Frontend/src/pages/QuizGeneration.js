@@ -84,32 +84,76 @@ const QuizGeneration = () => {
 
         
 
-        // Actually upload the file to backend
-
+        // Actually upload the file to backend for quiz generation
         setIsGenerating(true);
-
-        const uploadResponse = await fileService.uploadFile(file);
+        
+        // Create FormData for multipart upload
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('filename', file.name);
+        
+        const uploadResponse = await fileService.uploadFileForQuiz(formData, {
+          title: 'Generated Quiz',
+          description: 'Quiz generated from uploaded file',
+          questionCount: 10,
+          difficulty: 'INTERMEDIATE',
+          topics: ''
+        });
 
         
 
-        setUploadedFile(file);
-
-        toast.success(`File uploaded successfully! (${uploadResponse.fileName})`);
-
+        // Store file with upload response
+        console.log('Upload response:', uploadResponse);
+        setUploadedFile({
+          ...file,
+          uploadResponse: uploadResponse
+        });
         
-
-        // Store the upload response for later use
-
-        setUploadedFile(prev => ({ ...prev, uploadResponse }));
+        if (uploadResponse.fileName || uploadResponse.message) {
+          toast.success(`File uploaded successfully! (${uploadResponse.fileName || 'File uploaded'})`);
+        } else {
+          toast.success('File uploaded successfully!');
+        }
 
       } catch (error) {
-
-        toast.error(error.message || 'Failed to upload file');
-
+        console.error('File upload error:', error);
+        console.error('Error response:', error.response?.data);
+        console.error('Error status:', error.response?.status);
+        
+        // Check if it's a quiz generation error vs file upload error
+        const isQuizGenerationError = error.response?.data?.error?.includes('quiz') || 
+                                     error.response?.data?.error?.includes('generation') ||
+                                     error.response?.data?.error?.includes('AI') ||
+                                     error.response?.data?.message?.includes('quiz');
+        
+        // Still show the file even if quiz generation fails
+        setUploadedFile({
+          ...file,
+          uploadResponse: {
+            error: true,
+            message: error.response?.data?.error || error.message || 'Quiz generation failed',
+            fileName: file.name,
+            isQuizGenerationError: isQuizGenerationError
+          }
+        });
+        
+        // Show appropriate toast message
+        if (isQuizGenerationError) {
+          toast.success('File uploaded successfully! (Quiz generation failed - you can try again)');
+        } else {
+          // For actual file upload errors, show the error
+          let errorMessage = 'Failed to upload file';
+          if (error.response?.data?.error) {
+            errorMessage = error.response.data.error;
+          } else if (error.response?.data?.message) {
+            errorMessage = error.response.data.message;
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+          toast.error(errorMessage);
+        }
       } finally {
-
         setIsGenerating(false);
-
       }
 
     }
@@ -134,13 +178,21 @@ const QuizGeneration = () => {
 
     try {
 
+      // If file is already uploaded and quiz is generated, navigate to quiz
+      if (activeTab === 'import' && uploadedFile?.uploadResponse?.quiz) {
+        const quizId = uploadedFile.uploadResponse.quiz.id;
+        toast.success('Quiz already generated! Redirecting...');
+        navigate(`/quiz/${quizId}`);
+        return;
+      }
+
       let quizData = { ...data };
 
 
 
       // Handle file upload if in import tab
 
-      if (activeTab === 'import' && uploadedFile) {
+      if (activeTab === 'import' && uploadedFile && !uploadedFile.uploadResponse?.quiz) {
 
         const uploadResponse = await fileService.uploadFileForQuiz(uploadedFile, data);
 
@@ -480,6 +532,77 @@ const QuizGeneration = () => {
 
 
 
+                {/* UPLOADED FILE DISPLAY */}
+                {uploadedFile && (
+                  <div className={`mt-6 p-4 border rounded-lg ${
+                    uploadedFile.uploadResponse?.error 
+                      ? 'bg-red-500/10 border-red-500/30' 
+                      : 'bg-green-500/10 border-green-500/30'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <FileText className={uploadedFile.uploadResponse?.error ? 'text-red-400' : 'text-green-400'} size={20} />
+                        <div>
+                          <p className="text-white font-medium font-mono text-sm">
+                            {uploadedFile.name || uploadedFile.fileName || uploadedFile.uploadResponse?.fileName || 'Uploaded File'}
+                          </p>
+                          <p className="text-gray-400 text-xs font-mono">
+                            {uploadedFile.size ? `${(uploadedFile.size / 1024 / 1024).toFixed(2)} MB` : 'File uploaded successfully'}
+                          </p>
+                          
+                          {/* Status messages */}
+                          {uploadedFile.uploadResponse?.error ? (
+                            <p className="text-orange-400 text-xs font-mono mt-1">
+                              {uploadedFile.uploadResponse.isQuizGenerationError 
+                                ? '⚠️ File uploaded successfully, but quiz generation failed. You can try generating the quiz again.'
+                                : `⚠️ ${uploadedFile.uploadResponse.message}`
+                              }
+                            </p>
+                          ) : (
+                            <>
+                              {uploadedFile.uploadResponse?.publicUrl && (
+                                <p className="text-green-400 text-xs font-mono mt-1">
+                                  ✓ Uploaded to cloud storage
+                                </p>
+                              )}
+                              {uploadedFile.uploadResponse?.quiz && (
+                                <p className="text-orange-400 text-xs font-mono mt-1">
+                                  ✓ Quiz generated: {uploadedFile.uploadResponse.quiz.questions?.length || 0} questions
+                                </p>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setUploadedFile(null)}
+                        className="text-gray-400 hover:text-white transition-colors"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    
+                    {/* Show quiz preview if available */}
+                    {uploadedFile.uploadResponse?.quiz && (
+                      <div className="mt-4 pt-4 border-t border-green-500/20">
+                        <p className="text-green-400 text-sm font-mono mb-2">Quiz Preview:</p>
+                        <div className="space-y-2">
+                          {uploadedFile.uploadResponse.quiz.questions?.slice(0, 2).map((question, index) => (
+                            <div key={index} className="text-xs text-gray-300 font-mono">
+                              Q{index + 1}: {question.questionText?.substring(0, 80)}...
+                            </div>
+                          ))}
+                          {uploadedFile.uploadResponse.quiz.questions?.length > 2 && (
+                            <p className="text-xs text-gray-400 font-mono">
+                              ...and {uploadedFile.uploadResponse.quiz.questions.length - 2} more questions
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* CREATE QUIZ BUTTON */}
 
                 <button
@@ -492,7 +615,10 @@ const QuizGeneration = () => {
 
                 >
 
-                  {isGenerating ? 'Generating Quiz...' : 'Create Quiz'}
+                  {isGenerating ? 'Processing...' : 
+                   uploadedFile?.uploadResponse?.quiz ? 'View Generated Quiz' : 
+                   uploadedFile?.uploadResponse?.error ? 'Retry Quiz Generation' :
+                   'Create Quiz'}
 
                 </button>
 

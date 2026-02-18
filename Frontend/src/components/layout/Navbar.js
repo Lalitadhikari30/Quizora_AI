@@ -16,7 +16,7 @@ import { useAuth } from '../../hooks/useAuth';
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, userName } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -33,8 +33,6 @@ const Navbar = () => {
     { name: 'Interview', path: '/interview', icon: User },
     { name: 'Performance', path: '/performance', icon: TrendingUp },
   ];
-
-  const userName = localStorage.getItem('userName') || 'User';
 
   return (
     <div className="sticky top-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/10">

@@ -236,15 +236,11 @@ public class InterviewService {
             int totalInterviews = performance.getTotalInterviewsTaken() + 1;
             performance.setTotalInterviewsTaken(totalInterviews);
             
-            // Calculate current score based on correct answers
-            long currentScore = responses.stream()
-                    .mapToInt(r -> r.getIsCorrect() ? 1 : 0)
-                    .sum();
-            
             // Update average score
+            int currentScore = session.getTotalScore();
             double previousTotal = performance.getAverageInterviewScore() != null ? 
-                    performance.getAverageInterviewScore() * (totalInterviews - 1) : 0.0;
-            performance.setAverageInterviewScore((previousTotal + currentScore) / totalInterviews);
+                    performance.getAverageInterviewScore() * performance.getTotalInterviewsTaken() : 0.0;
+            performance.setAverageInterviewScore((double) (previousTotal + currentScore) / totalInterviews);
             
             performance.setLastUpdated(LocalDateTime.now());
             userPerformanceRepository.save(performance);

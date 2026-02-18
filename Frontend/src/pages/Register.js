@@ -25,10 +25,40 @@ const Register = () => {
     try {
       const response = await authService.register(data);
       
-      toast.success('Registration Successful! Welcome to Quizora AI');
-      navigate('/dashboard');
+      // Handle different registration scenarios
+      if (response.developmentMode) {
+        // Development fallback mode
+        toast.success('🔧 ' + response.message);
+        navigate('/dashboard');
+      } else if (response.requiresEmailConfirmation) {
+        // User needs to confirm email
+        toast.success(response.message);
+        navigate('/login');
+      } else {
+        // User is automatically logged in
+        toast.success(response.message);
+        navigate('/dashboard');
+      }
     } catch (error) {
-      toast.error(error.message || 'Registration Failed: Please try again.');
+      console.error('Registration error:', error);
+      
+      // Handle specific error messages
+      if (error.message.includes('rate limit')) {
+        toast.error('⏰ ' + error.message + ' (Using development mode as fallback)');
+      } else if (error.message.includes('already exists') || error.message.includes('already registered')) {
+        toast.error('📧 ' + error.message);
+        // Suggest going to login page after a delay
+        setTimeout(() => {
+          toast('👉 Try logging in instead', {
+            icon: '🔑',
+            duration: 3000,
+          });
+        }, 2000);
+      } else if (error.message.includes('Failed to create user profile')) {
+        toast.error('🔧 ' + error.message);
+      } else {
+        toast.error('❌ ' + (error.message || 'Registration Failed: Please try again.'));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -47,6 +77,22 @@ const Register = () => {
             <p className="text-gray-400">
               Create your account and start learning
             </p>
+            <div className="text-xs text-gray-500 bg-blue-900/20 border border-blue-800/30 rounded-lg p-3">
+              <p className="flex items-center">
+                <span className="mr-2">ℹ️</span>
+                Note: Due to security measures, there may be a short delay between registration attempts.
+              </p>
+              <p className="flex items-center mt-2 text-yellow-400">
+                <span className="mr-2">⚠️</span>
+                If you already have an account, please use the login page instead.
+              </p>
+              {process.env.NODE_ENV === 'development' && (
+                <p className="flex items-center mt-2 text-orange-400">
+                  <span className="mr-2">🔧</span>
+                  Development mode: Automatic fallback if rate limits are hit.
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Register Form */}

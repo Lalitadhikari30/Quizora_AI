@@ -20,6 +20,7 @@ C:\Users\Fam\Downloads\QuizoraAI\Backend\src\main\java\com\quizora\dto\QuizResul
 C:\Users\Fam\Downloads\QuizoraAI\Backend\src\main\java\com\quizora\entity\Question.java
 C:\Users\Fam\Downloads\QuizoraAI\Backend\src\main\java\com\quizora\service\ContentExtractionService.java
 C:\Users\Fam\Downloads\QuizoraAI\Backend\src\main\java\com\quizora\entity\QuestionType.java
+C:\Users\Fam\Downloads\QuizoraAI\Backend\src\main\java\com\quizora\config\CorsConfig.java
 C:\Users\Fam\Downloads\QuizoraAI\Backend\src\main\java\com\quizora\repository\QuestionRepository.java
 C:\Users\Fam\Downloads\QuizoraAI\Backend\src\main\java\com\quizora\service\SupabaseService.java
 C:\Users\Fam\Downloads\QuizoraAI\Backend\src\main\java\com\quizora\entity\QuizType.java
@@ -29,6 +30,7 @@ C:\Users\Fam\Downloads\QuizoraAI\Backend\src\main\java\com\quizora\config\Securi
 C:\Users\Fam\Downloads\QuizoraAI\Backend\src\main\java\com\quizora\entity\SourceType.java
 C:\Users\Fam\Downloads\QuizoraAI\Backend\src\main\java\com\quizora\repository\InterviewResponseRepository.java
 C:\Users\Fam\Downloads\QuizoraAI\Backend\src\main\java\com\quizora\repository\QuizAttemptRepository.java
+C:\Users\Fam\Downloads\QuizoraAI\Backend\src\main\java\com\quizora\config\DevelopmentTokenFilter.java
 C:\Users\Fam\Downloads\QuizoraAI\Backend\src\main\java\com\quizora\entity\InterviewResponse.java
 C:\Users\Fam\Downloads\QuizoraAI\Backend\src\main\java\com\quizora\repository\UserPerformanceRepository.java
 C:\Users\Fam\Downloads\QuizoraAI\Backend\src\main\java\com\quizora\controller\InterviewController.java

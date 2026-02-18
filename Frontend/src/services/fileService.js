@@ -61,7 +61,7 @@ export const fileService = {
   },
 
   // Validate file type and size
-  validateFile(file, allowedTypes = ['pdf', 'doc', 'docx', 'txt'], maxSizeMB = 10) {
+  validateFile(file, allowedTypes = ['pdf', 'doc', 'docx', 'txt', 'xlsx', 'xls', 'csv', 'json', 'jpg', 'png'], maxSizeMB = 10) {
     const fileExtension = file.name.split('.').pop().toLowerCase();
     const fileSizeMB = file.size / (1024 * 1024);
     

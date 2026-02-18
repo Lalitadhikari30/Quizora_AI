@@ -4,12 +4,14 @@ com\quizora\dto\QuizResultResponse.class
 com\quizora\service\ContentExtractionService$1.class
 com\quizora\service\FileUploadService.class
 com\quizora\entity\InterviewSession$SessionStatus.class
+com\quizora\config\CorsConfig$1.class
 com\quizora\config\SecurityConfig.class
 com\quizora\dto\QuestionResponse.class
 com\quizora\entity\QuizType.class
 com\quizora\service\QuizService.class
 com\quizora\controller\AuthController.class
 com\quizora\entity\QuizAttempt.class
+com\quizora\config\DevelopmentTokenFilter.class
 com\quizora\entity\InterviewResponse.class
 com\quizora\dto\InterviewReportResponse.class
 com\quizora\repository\QuestionRepository.class
@@ -20,9 +22,11 @@ com\quizora\exception\GlobalExceptionHandler.class
 com\quizora\entity\Question.class
 com\quizora\repository\QuizRepository.class
 com\quizora\entity\SourceType.class
+com\quizora\config\CorsConfig.class
 com\quizora\dto\QuizResponse.class
 com\quizora\entity\Difficulty.class
 com\quizora\dto\InterviewStartRequest.class
+com\quizora\config\SecurityConfig$CustomJwtDecoder.class
 com\quizora\controller\QuizController.class
 com\quizora\dto\InterviewSessionResponse.class
 com\quizora\entity\Quiz.class

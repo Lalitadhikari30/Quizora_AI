@@ -7,6 +7,7 @@ yarn-error.log*
 # Production builds
 /frontend/build
 /backend/target
+Backend/target/
 
 # Environment variables
 .env
@@ -14,6 +15,7 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+Backend/.env
 
 # IDE files
 .vscode/
@@ -46,9 +48,18 @@ debug-*.js
 
 # Maven
 target/
+Backend/target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+
+# Java compiled classes
+*.class
+Backend/target/classes/
+
+# Upload directories (local storage)
+uploads/
+Backend/uploads/
 
 # Coverage directory used by tools like istanbul
 coverage/

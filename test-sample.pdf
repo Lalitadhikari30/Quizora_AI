@@ -1,0 +1,21 @@
+This is a test PDF document for demonstrating text extraction.
+
+Chapter 1: Introduction to Java
+Java is a high-level, class-based, object-oriented programming language that is designed to have as few implementation dependencies as possible. It is a general-purpose programming language intended to let application developers write once, run anywhere (WORA), meaning that compiled Java code can run on all platforms that support Java without the need for recompilation.
+
+Chapter 2: Key Features
+- Simple: Java has a simpler syntax compared to C++ and eliminates features like pointers and header files.
+- Object-Oriented: Everything in Java is an object except for primitive data types.
+- Platform Independent: Java code can run on any platform that supports Java Virtual Machine (JVM).
+- Robust: Java has strong memory management and exception handling.
+- Secure: Java provides security features to create safe applications.
+
+Chapter 3: Applications
+Java is used in:
+- Web applications (Spring Boot, Jakarta EE)
+- Mobile applications (Android)
+- Desktop applications
+- Enterprise applications
+- Big data processing
+
+This document contains enough text to test the extraction functionality and should meet the minimum 200 character requirement for quiz generation.

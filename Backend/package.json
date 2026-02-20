@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@supabase/supabase-js": "^2.96.0",
+    "axios": "^1.13.5",
+    "form-data": "^4.0.5"
+  }
+}

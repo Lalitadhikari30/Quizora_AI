@@ -77,7 +77,10 @@ public class FileUploadService {
                 Files.createDirectories(uploadPath);
             }
             
-            Path filePath = uploadPath.resolve(file.getOriginalFilename());
+            // Generate unique filename to avoid conflicts
+            String originalFilename = file.getOriginalFilename();
+            String uniqueFilename = generateUniqueFilename(originalFilename);
+            Path filePath = uploadPath.resolve(uniqueFilename);
             logger.info("Target file path: {}", filePath);
             
             Files.copy(file.getInputStream(), filePath);
@@ -91,5 +94,24 @@ public class FileUploadService {
             logger.error("Failed to save file locally", e);
             throw new RuntimeException("Failed to save file: " + e.getMessage());
         }
+    }
+    
+    private String generateUniqueFilename(String originalFilename) {
+        if (originalFilename == null || originalFilename.isEmpty()) {
+            originalFilename = "upload";
+        }
+        
+        String nameWithoutExt = originalFilename;
+        String extension = "";
+        
+        int dotIndex = originalFilename.lastIndexOf('.');
+        if (dotIndex > 0) {
+            nameWithoutExt = originalFilename.substring(0, dotIndex);
+            extension = originalFilename.substring(dotIndex);
+        }
+        
+        // Add timestamp to make filename unique
+        long timestamp = System.currentTimeMillis();
+        return nameWithoutExt + "_" + timestamp + extension;
     }
 }

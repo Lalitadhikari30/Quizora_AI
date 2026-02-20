@@ -122,20 +122,44 @@ public class ContentExtractionService {
     private String extractFromPdf(MultipartFile file) throws IOException {
         logger.info("=== PDF EXTRACTION START ===");
         
-        try (InputStream inputStream = file.getInputStream();
-             PDDocument document = PDDocument.load(inputStream)) {
+        try (InputStream inputStream = file.getInputStream()) {
+            // Validate PDF file format
+            byte[] headerBytes = new byte[4];
+            int bytesRead = inputStream.read(headerBytes);
+            if (bytesRead < 4) {
+                throw new RuntimeException("Invalid PDF file: file too small");
+            }
             
-            logger.info("PDF loaded successfully, pages: {}", document.getNumberOfPages());
+            String header = new String(headerBytes);
+            if (!header.startsWith("%PDF")) {
+                throw new RuntimeException("Invalid PDF file format");
+            }
             
-            PDFTextStripper stripper = new PDFTextStripper();
-            String text = stripper.getText(document);
+            // Reset stream to beginning for PDF parsing
+            inputStream.reset();
             
-            logger.info("PDF text extraction completed");
-            logger.info("Extracted PDF text length: {} characters", text.length());
-            logger.info("PDF text preview: {}", text.length() > 200 ? text.substring(0, 200) + "..." : text);
-            logger.info("=== PDF EXTRACTION END ===");
+            // Load PDF with proper error handling
+            try (PDDocument document = PDDocument.load(inputStream)) {
+                
+                logger.info("PDF loaded successfully, pages: {}", document.getNumberOfPages());
+                
+                PDFTextStripper stripper = new PDFTextStripper();
+                String text = stripper.getText(document);
+                
+                logger.info("PDF text extraction completed");
+                logger.info("Extracted PDF text length: {} characters", text.length());
+                logger.info("PDF text preview: {}", text.length() > 200 ? text.substring(0, 200) + "..." : text);
+                logger.info("=== PDF EXTRACTION END ===");
+                
+                return text.trim();
+            }
             
-            return text.trim();
+        } catch (IOException e) {
+            logger.error("PDF parsing failed: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to extract text from PDF: " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("Unexpected error during PDF extraction: {}", e.getMessage(), e);
+            throw new RuntimeException("PDF extraction failed: " + e.getMessage());
         }
     }
     

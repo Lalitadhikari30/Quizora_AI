@@ -1,0 +1,11 @@
+This is a test document for quiz generation. It contains information about programming concepts that can be used to generate meaningful quiz questions.
+
+JavaScript is a popular programming language used for web development. It allows developers to create interactive web pages and dynamic user interfaces. JavaScript can be used both on the client-side in web browsers and on the server-side with Node.js.
+
+Variables in JavaScript are used to store data values. You can declare variables using var, let, or const keywords. The let and const keywords are preferred in modern JavaScript as they provide better scope control.
+
+Functions are reusable blocks of code that perform specific tasks. They can be defined using function declarations, function expressions, or arrow functions. Functions can take parameters and return values.
+
+Arrays are used to store multiple values in a single variable. JavaScript arrays are dynamic and can grow or shrink in size. They provide various methods for manipulation such as push, pop, shift, and unshift.
+
+Objects are collections of key-value pairs and are fundamental to JavaScript. They can be created using object literals or constructor functions. Objects allow you to group related data and functionality together.

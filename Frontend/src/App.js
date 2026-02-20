@@ -33,8 +33,9 @@ function App() {
           />
 
           <Route path="/quiz/:id"
-            element={<ProtectedRoute><QuizTaking /></ProtectedRoute>}
+            element={<QuizTaking />}
           />
+
 
           <Route path="/interview"
             element={<ProtectedRoute><Interview /></ProtectedRoute>}

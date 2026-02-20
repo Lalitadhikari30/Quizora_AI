@@ -56,7 +56,7 @@ public class QuizController {
     @PostMapping("/{id}/submit")
     public ResponseEntity<QuizResultResponse> submitQuiz(
             @PathVariable Long id,
-            @RequestBody List<AnswerReviewResponse> answers,
+            @RequestBody List<AnswerSubmitRequest> answers,
             Authentication authentication) {
         try {
             String userId = authentication.getName();

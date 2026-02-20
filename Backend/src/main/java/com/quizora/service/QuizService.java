@@ -1,7 +1,678 @@
+// // package com.quizora.service;
+
+// // import com.fasterxml.jackson.databind.JsonNode;
+// // import com.fasterxml.jackson.databind.ObjectMapper;
+// // import com.quizora.dto.*;
+// // import com.quizora.entity.*;
+// // import com.quizora.repository.*;
+// // import org.slf4j.Logger;
+// // import org.slf4j.LoggerFactory;
+// // import org.springframework.beans.factory.annotation.Autowired;
+// // import org.springframework.stereotype.Service;
+// // import org.springframework.transaction.annotation.Transactional;
+
+// // import java.time.LocalDateTime;
+// // import java.util.ArrayList;
+// // import java.util.List;
+// // import java.util.stream.Collectors;
+
+// // @Service
+// // public class QuizService {
+    
+// //     private static final Logger logger = LoggerFactory.getLogger(QuizService.class);
+    
+// //     @Autowired
+// //     private QuizRepository quizRepository;
+    
+// //     @Autowired
+// //     private QuestionRepository questionRepository;
+    
+// //     @Autowired
+// //     private QuizAttemptRepository quizAttemptRepository;
+    
+// //     @Autowired
+// //     private ContentExtractionService contentExtractionService;
+    
+// //     @Autowired
+// //     private AiIntegrationService aiIntegrationService;
+    
+// //     @Autowired
+// //     private TextExtractionService textExtractionService;
+    
+// //     private final ObjectMapper objectMapper = new ObjectMapper();
+
+// //     @Transactional
+// //     public QuizResponse generateQuiz(QuizGenerationRequest request, String userId) {
+// //         try {
+// //             // Extract content based on source type
+// //             String extractedContent = contentExtractionService.extractContent(
+// //                 request.getSourceContent(), 
+// //                 SourceType.valueOf(request.getSourceType())
+// //             );
+            
+// //             // Generate questions using AI (mock implementation for testing)
+// //             // List<String> generatedQuestions = aiIntegrationService.generateQuizQuestions(
+// //             //     extractedContent,
+// //             //     request.getQuestionCount() != null ? request.getQuestionCount() : 10,
+// //             //     request.getDifficulty() != null ? request.getDifficulty() : "medium",
+// //             //     request.getTopics() != null ? request.getTopics() : "general"
+// //             // );
+            
+// //             // Mock questions for testing
+// //             List<String> generatedQuestions = List.of(
+// //                 "What is JavaScript? A programming language for web development.",
+// //                 "What is a variable? A container for storing data values.",
+// //                 "What is a function? A block of code designed to perform a particular task.",
+// //                 "What is an array? A data structure that stores multiple values.",
+// //                 "What is DOM? Document Object Model, programming interface for web documents."
+// //             );
+            
+// //             // Create quiz entity
+// //             Quiz quiz = new Quiz();
+// //             quiz.setTitle(request.getTitle());
+// //             quiz.setDescription(request.getDescription());
+// //             quiz.setUserId(userId);
+// //             quiz.setType(QuizType.valueOf(request.getType()));
+// //             quiz.setSourceContent(request.getSourceContent());
+// //             quiz.setSourceType(SourceType.valueOf(request.getSourceType()));
+            
+// //             quiz = quizRepository.save(quiz);
+            
+// //             // Parse and create questions
+// //             List<Question> questions = parseAndCreateQuestions(generatedQuestions, quiz);
+            
+// //             logger.info("Generated quiz with {} questions for user: {}", questions.size(), userId);
+            
+// //             return mapToQuizResponse(quiz, questions);
+            
+// //         } catch (Exception e) {
+// //             logger.error("Failed to generate quiz", e);
+// //             throw new RuntimeException("Failed to generate Quiz: " + e.getMessage());
+// //         }
+// //     }
+
+// //     private List<Question> parseAndCreateQuestions(List<String> questionTexts, Quiz quiz) {
+// //         List<Question> questions = new ArrayList<>();
+        
+// //         for (int i = 0; i < questionTexts.size(); i++) {
+// //             try {
+// //                 String questionJson = questionTexts.get(i);
+// //                 JsonNode questionNode = objectMapper.readTree(questionJson);
+                
+// //                 Question question = new Question();
+// //                 question.setQuiz(quiz);
+// //                 question.setQuestionText(questionNode.path("question").asText());
+// //                 question.setType(QuestionType.valueOf(questionNode.path("type").asText()));
+// //                 question.setCorrectAnswer(questionNode.path("correct_answer").asText());
+                
+// //                 if (questionNode.has("options")) {
+// //                     question.setOptions(questionNode.path("options").asText());
+// //                 }
+                
+// //                 if (questionNode.has("explanation")) {
+// //                     question.setExplanation(questionNode.path("explanation").asText());
+// //                 }
+                
+// //                 if (questionNode.has("difficulty")) {
+// //                     question.setDifficulty(questionNode.path("difficulty").asInt());
+// //                 }
+                
+// //                 if (questionNode.has("topic_tags")) {
+// //                     question.setTopicTags(questionNode.path("topic_tags").asText());
+// //                 }
+                
+// //                 questions.add(questionRepository.save(question));
+                
+// //             } catch (Exception e) {
+// //                 logger.error("Failed to parse question: {}", questionTexts.get(i), e);
+// //                 // Create a fallback question
+// //                 Question fallbackQuestion = new Question();
+// //                 fallbackQuestion.setQuiz(quiz);
+// //                 fallbackQuestion.setQuestionText(questionTexts.get(i));
+// //                 fallbackQuestion.setType(QuestionType.MULTIPLE_CHOICE);
+// //                 fallbackQuestion.setCorrectAnswer("A");
+// //                 fallbackQuestion.setOptions("A. Option A\nB. Option B\nC. Option C\nD. Option D");
+// //                 fallbackQuestion.setExplanation("Generated question - please review");
+// //                 fallbackQuestion.setDifficulty(2);
+// //                 fallbackQuestion.setTopicTags("general");
+                
+// //                 questions.add(questionRepository.save(fallbackQuestion));
+// //             }
+// //         }
+        
+// //         return questions;
+// //     }
+
+// //     private QuizResponse mapToQuizResponse(Quiz quiz, List<Question> questions) {
+// //         QuizResponse response = new QuizResponse();
+// //         response.setId(quiz.getId());
+// //         response.setTitle(quiz.getTitle());
+// //         response.setDescription(quiz.getDescription());
+// //         response.setType(quiz.getType().toString());
+// //         response.setSourceType(quiz.getSourceType().toString());
+// //         response.setSourceContent(quiz.getSourceContent());
+// //         response.setQuestions(questions.stream()
+// //                 .map(q -> {
+// //                     QuestionResponse qr = new QuestionResponse();
+// //                     qr.setId(q.getId());
+// //                     qr.setQuestionText(q.getQuestionText());
+// //                     qr.setType(q.getType().toString());
+// //                     qr.setCorrectAnswer(q.getCorrectAnswer());
+// //                     qr.setOptions(q.getOptions());
+// //                     qr.setExplanation(q.getExplanation());
+// //                     qr.setDifficulty(q.getDifficulty());
+// //                     qr.setTopicTags(q.getTopicTags());
+// //                     return qr;
+// //                 })
+// //                 .collect(Collectors.toList()));
+        
+// //         return response;
+// //     }
+
+// //     public QuizResponse getQuiz(Long quizId, String userId) {
+// //         Quiz quiz = quizRepository.findByIdAndUserId(quizId, userId)
+// //                 .orElseThrow(() -> new RuntimeException("Quiz not found"));
+        
+// //         List<Question> questions = questionRepository.findByQuizIdOrderById(quizId);
+        
+// //         return mapToQuizResponse(quiz, questions);
+// //     }
+
+// //     @Transactional
+// //     public QuizResultResponse submitQuiz(Long quizId, List<AnswerReviewResponse> answers, String userId) {
+// //         try {
+// //             Quiz quiz = quizRepository.findByIdAndUserId(quizId, userId)
+// //                     .orElseThrow(() -> new RuntimeException("Quiz not found"));
+            
+// //             QuizAttempt attempt = new QuizAttempt();
+// //             attempt.setQuiz(quiz);
+// //             attempt.setUserId(userId);
+// //             attempt.setTotalQuestions(answers.size());
+            
+// //             int correctCount = 0;
+// //             List<AnswerReviewResponse> answerReviews = new ArrayList<>();
+            
+// //             for (int i = 0; i < answers.size(); i++) {
+// //                 AnswerReviewResponse review = new AnswerReviewResponse();
+// //                 review.setQuestion(answers.get(i).getQuestion());
+// //                 review.setUserAnswer(answers.get(i).getUserAnswer());
+// //                 review.setCorrectAnswer(answers.get(i).getCorrectAnswer());
+// //                 review.setIsCorrect(answers.get(i).getIsCorrect());
+                
+// //                 if (answers.get(i).getIsCorrect()) {
+// //                     correctCount++;
+// //                 }
+                
+// //                 answerReviews.add(review);
+// //             }
+            
+// //             attempt.setCorrectAnswers(correctCount);
+// //             attempt.setScore(correctCount);
+// //             attempt.setCompletionTime(LocalDateTime.now());
+            
+// //             quizAttemptRepository.save(attempt);
+            
+// //             QuizResultResponse result = new QuizResultResponse();
+// //             result.setQuizId(quizId);
+// //             result.setTitle(quiz.getTitle());
+// //             result.setTotalQuestions(answers.size());
+// //             result.setCorrectAnswers(correctCount);
+// //             result.setScore(correctCount);
+// //             result.setPercentage((double) correctCount / answers.size() * 100);
+// //             result.setAnswerReviews(answerReviews);
+            
+// //             logger.info("Quiz submitted: {} correct out of {} for user: {}", correctCount, answers.size(), userId);
+            
+// //             return result;
+            
+// //         } catch (Exception e) {
+// //             logger.error("Failed to submit quiz", e);
+// //             throw new RuntimeException("Failed to submit Quiz: " + e.getMessage());
+// //         }
+// //     }
+
+// //     public List<QuizResponse> getUserQuizzes(String userId) {
+// //         List<Quiz> quizzes = quizRepository.findByUserIdOrderByCreatedAtDesc(userId);
+
+
+        
+// //         return quizzes.stream()
+// //                 .map(quiz -> {
+// //                     List<Question> questions = questionRepository.findByQuizIdOrderById(quiz.getId());
+// //                     return mapToQuizResponse(quiz, questions);
+// //                 })
+// //                 .collect(Collectors.toList());
+// //     }
+
+// //     @Transactional
+// //     public QuizResponse generateQuizFromText(String userId, String extractedText, String fileName) {
+// //         try {
+// //             logger.info("Generating quiz from extracted text for user: {}", userId);
+            
+// //             // Generate questions using AI
+// //             List<QuizQuestionDTO> generatedQuestions = aiIntegrationService.generateQuizFromContent(
+// //                 extractedText,
+// //                 "medium", // Default difficulty
+// //                 "general", // Default topics
+// //                 10 // Default question count
+// //             );
+            
+// //             if (generatedQuestions.isEmpty()) {
+// //                 throw new RuntimeException("Failed to generate questions from content");
+// //             }
+            
+// //             // Create quiz entity
+// //             Quiz quiz = new Quiz();
+// //             quiz.setTitle("Quiz from " + fileName);
+// //             quiz.setDescription("Auto-generated quiz from uploaded file: " + fileName);
+// //             quiz.setUserId(userId);
+// //             quiz.setType(QuizType.MULTIPLE_CHOICE);
+// //             quiz.setSourceContent(extractedText);
+// //             quiz.setSourceType(SourceType.PDF); // Default to PDF for uploaded files
+// //             quiz.setCreatedAt(LocalDateTime.now());
+// //             quiz.setUpdatedAt(LocalDateTime.now());
+            
+// //             quiz = quizRepository.save(quiz);
+            
+// //             // Create questions from AI response
+// //             List<Question> questions = new ArrayList<>();
+// //             for (QuizQuestionDTO dto : generatedQuestions) {
+// //                 Question question = new Question();
+// //                 question.setQuiz(quiz);
+// //                 question.setQuestionText(dto.getQuestion());
+// //                 question.setCorrectAnswer(dto.getAnswer());
+// //                 question.setExplanation(dto.getExplanation());
+// //                 question.setDifficulty(getDifficultyValue(dto.getDifficulty()));
+// //                 question.setType(QuestionType.MULTIPLE_CHOICE);
+                
+// //                 // Convert options array to JSON string
+// //                 String optionsJson = String.join(",", dto.getOptions());
+// //                 question.setOptions(optionsJson);
+                
+// //                 // Set topic tags from topics array
+// //                 String topicsJson = String.join(",", dto.getTopics());
+// //                 question.setTopicTags(topicsJson);
+                
+// //                 questions.add(question);
+// //             }
+            
+// //             questionRepository.saveAll(questions);
+            
+// //             logger.info("Successfully created quiz with {} questions from file: {}", questions.size(), fileName);
+            
+// //             return mapToQuizResponse(quiz, questions);
+            
+// //         } catch (Exception e) {
+// //             logger.error("Failed to generate quiz from text", e);
+// //             throw new RuntimeException("Failed to generate quiz from text: " + e.getMessage());
+// //         }
+// //     }
+
+// //     private Integer getDifficultyValue(String difficulty) {
+// //         if (difficulty == null) return 2; // Default to medium
+// //         switch (difficulty.toLowerCase()) {
+// //             case "beginner": return 1;
+// //             case "intermediate": return 2;
+// //             case "advanced": return 3;
+// //             default: return 2; // Default to medium
+// //         }
+// //     }
+// // }
+
+
+
+// package com.quizora.service;
+
+// import com.quizora.dto.*;
+// import com.quizora.entity.*;
+// import com.quizora.repository.*;
+// import org.slf4j.Logger;
+// import org.slf4j.LoggerFactory;
+// import org.springframework.beans.factory.annotation.Autowired;
+// import org.springframework.stereotype.Service;
+// import org.springframework.transaction.annotation.Transactional;
+
+// import java.time.LocalDateTime;
+// import java.util.*;
+// import java.util.stream.Collectors;
+
+// @Service
+// public class QuizService {
+
+//     private static final Logger logger =
+//             LoggerFactory.getLogger(QuizService.class);
+
+//     @Autowired
+//     private QuizRepository quizRepository;
+
+//     @Autowired
+//     private QuestionRepository questionRepository;
+
+//     @Autowired
+//     private QuizAttemptRepository quizAttemptRepository;
+
+//     @Autowired
+//     private AiIntegrationService aiIntegrationService;
+
+//     /* =====================================================
+//        GET QUIZ
+//        ===================================================== */
+//     public QuizResponse getQuiz(Long quizId, String userId) {
+
+//         Quiz quiz = quizRepository.findByIdAndUserId(quizId, userId)
+//                 .orElseThrow(() ->
+//                         new RuntimeException("Quiz not found"));
+
+//         List<Question> questions =
+//                 questionRepository.findByQuizIdOrderById(quizId);
+
+//         return mapToQuizResponse(quiz, questions);
+//     }
+
+//     /* =====================================================
+//        GENERATE QUIZ FROM UPLOADED TEXT (AI)
+//        ===================================================== */
+//     @Transactional
+//     public QuizResponse generateQuizFromText(
+//             String userId,
+//             String extractedText,
+//             String fileName) {
+
+//         logger.info("Generating quiz from extracted text for user: {}",
+//                 userId);
+
+//         List<QuizQuestionDTO> generatedQuestions =
+//                 aiIntegrationService.generateQuizFromContent(
+//                         extractedText,
+//                         "medium",
+//                         "general",
+//                         10
+//                 );
+
+//         if (generatedQuestions.isEmpty()) {
+//             throw new RuntimeException(
+//                     "Failed to generate questions from content");
+//         }
+
+//         Quiz quiz = new Quiz();
+//         quiz.setTitle("Quiz from " + fileName);
+//         quiz.setDescription(
+//                 "Auto-generated quiz from uploaded file");
+//         quiz.setUserId(userId);
+//         quiz.setType(QuizType.MULTIPLE_CHOICE);
+//         quiz.setSourceContent(extractedText);
+//         quiz.setSourceType(SourceType.PDF);
+//         quiz.setCreatedAt(LocalDateTime.now());
+//         quiz.setUpdatedAt(LocalDateTime.now());
+
+//         quiz = quizRepository.save(quiz);
+
+//         List<Question> questions = new ArrayList<>();
+
+//         for (QuizQuestionDTO dto : generatedQuestions) {
+
+//             Question question = new Question();
+//             question.setQuiz(quiz);
+//             question.setQuestionText(dto.getQuestion());
+//             question.setCorrectAnswer(dto.getAnswer());
+//             question.setExplanation(dto.getExplanation());
+//             question.setType(QuestionType.MULTIPLE_CHOICE);
+
+//             // Store options as comma-separated
+//             question.setOptions(String.join(",",
+//                     dto.getOptions()));
+
+//             question.setDifficulty(getDifficultyValue(
+//                     dto.getDifficulty()));
+
+//             question.setTopicTags(String.join(",",
+//                     dto.getTopics()));
+
+//             questions.add(question);
+//         }
+
+//         questionRepository.saveAll(questions);
+
+//         logger.info("Created quiz with {} questions",
+//                 questions.size());
+
+//         return mapToQuizResponse(quiz, questions);
+//     }
+
+//     /* =====================================================
+//        SUBMIT QUIZ (FINAL FIXED VERSION)
+//        ===================================================== */
+//     @Transactional
+//     public QuizResultResponse submitQuiz(
+//             Long quizId,
+//             List<AnswerSubmitRequest> answers,
+//             String userId) {
+
+//         Quiz quiz = quizRepository.findByIdAndUserId(
+//                 quizId, userId)
+//                 .orElseThrow(() ->
+//                         new RuntimeException("Quiz not found"));
+
+//         List<Question> questions =
+//                 questionRepository.findByQuizIdOrderById(quizId);
+
+//         int correctCount = 0;
+//         List<AnswerReviewResponse> reviewList =
+//                 new ArrayList<>();
+
+//         for (AnswerSubmitRequest submitted : answers) {
+
+//             Question question = questions.stream()
+//                     .filter(q -> q.getId()
+//                             .equals(submitted.getQuestionId()))
+//                     .findFirst()
+//                     .orElseThrow(() ->
+//                             new RuntimeException("Question not found"));
+
+//             // Parse options safely
+//             List<String> options = parseOptions(
+//                     question.getOptions());
+
+//             Integer selectedIndex =
+//                     submitted.getSelectedAnswer();
+
+//             String userAnswer = null;
+
+//             if (selectedIndex != null &&
+//                     selectedIndex >= 0 &&
+//                     selectedIndex < options.size()) {
+
+//                 userAnswer = options.get(selectedIndex);
+//             }
+
+//             String correctAnswer =
+//                     question.getCorrectAnswer();
+
+//             boolean isCorrect = false;
+
+//             if (userAnswer != null &&
+//                     correctAnswer != null) {
+
+//                 // Case 1: correctAnswer is text
+//                 if (!correctAnswer.matches("\\d+")) {
+
+//                     isCorrect = userAnswer
+//                             .equalsIgnoreCase(correctAnswer);
+//                 }
+
+//                 // Case 2: correctAnswer is index
+//                 else {
+
+//                     int correctIndex =
+//                             Integer.parseInt(correctAnswer);
+
+//                     if (correctIndex >= 0 &&
+//                             correctIndex < options.size()) {
+
+//                         isCorrect = selectedIndex != null
+//                                 && selectedIndex == correctIndex;
+
+//                         correctAnswer =
+//                                 options.get(correctIndex);
+//                     }
+//                 }
+//             }
+
+//             if (isCorrect) correctCount++;
+
+//             AnswerReviewResponse review =
+//                     new AnswerReviewResponse();
+
+//             review.setQuestion(
+//                     question.getQuestionText());
+//             review.setUserAnswer(userAnswer);
+//             review.setCorrectAnswer(correctAnswer);
+//             review.setIsCorrect(isCorrect);
+//             review.setExplanation(
+//                     question.getExplanation());
+
+//             reviewList.add(review);
+//         }
+
+//         // Save Attempt
+//         QuizAttempt attempt = new QuizAttempt();
+//         attempt.setQuiz(quiz);
+//         attempt.setUserId(userId);
+//         attempt.setTotalQuestions(answers.size());
+//         attempt.setCorrectAnswers(correctCount);
+//         attempt.setScore(correctCount);
+//         attempt.setCompletionTime(LocalDateTime.now());
+
+//         quizAttemptRepository.save(attempt);
+
+//         QuizResultResponse result =
+//                 new QuizResultResponse();
+
+//         result.setQuizId(quizId);
+//         result.setTitle(quiz.getTitle());
+//         result.setTotalQuestions(answers.size());
+//         result.setCorrectAnswers(correctCount);
+//         result.setScore(correctCount);
+
+//         double percentage = answers.isEmpty()
+//                 ? 0
+//                 : ((double) correctCount
+//                 / answers.size()) * 100;
+
+//         result.setPercentage(percentage);
+//         result.setAnswerReviews(reviewList);
+
+//         logger.info("Quiz submitted: {} correct out of {}",
+//                 correctCount, answers.size());
+
+//         return result;
+//     }
+
+//     /* =====================================================
+//        GET USER QUIZZES
+//        ===================================================== */
+//     public List<QuizResponse> getUserQuizzes(
+//             String userId) {
+
+//         List<Quiz> quizzes =
+//                 quizRepository
+//                         .findByUserIdOrderByCreatedAtDesc(userId);
+
+//         return quizzes.stream()
+//                 .map(q -> {
+//                     List<Question> questions =
+//                             questionRepository
+//                                     .findByQuizIdOrderById(q.getId());
+//                     return mapToQuizResponse(q, questions);
+//                 })
+//                 .collect(Collectors.toList());
+//     }
+
+//     /* =====================================================
+//        HELPER METHODS
+//        ===================================================== */
+
+//     private List<String> parseOptions(String optionsString) {
+
+//         if (optionsString == null ||
+//                 optionsString.isEmpty()) {
+//             return new ArrayList<>();
+//         }
+
+//         String[] split = optionsString.split(",");
+
+//         List<String> list = new ArrayList<>();
+
+//         for (String opt : split) {
+//             list.add(opt.trim());
+//         }
+
+//         return list;
+//     }
+
+//     private Integer getDifficultyValue(String difficulty) {
+
+//         if (difficulty == null) return 2;
+
+//         switch (difficulty.toLowerCase()) {
+//             case "beginner":
+//                 return 1;
+//             case "advanced":
+//                 return 3;
+//             default:
+//                 return 2;
+//         }
+//     }
+
+//     private QuizResponse mapToQuizResponse(
+//             Quiz quiz,
+//             List<Question> questions) {
+
+//         QuizResponse response = new QuizResponse();
+
+//         response.setId(quiz.getId());
+//         response.setTitle(quiz.getTitle());
+//         response.setDescription(
+//                 quiz.getDescription());
+//         response.setType(
+//                 quiz.getType().toString());
+//         response.setSourceType(
+//                 quiz.getSourceType().toString());
+//         response.setSourceContent(
+//                 quiz.getSourceContent());
+
+//         response.setQuestions(
+//                 questions.stream()
+//                         .map(q -> {
+//                             QuestionResponse qr =
+//                                     new QuestionResponse();
+//                             qr.setId(q.getId());
+//                             qr.setQuestionText(
+//                                     q.getQuestionText());
+//                             qr.setType(
+//                                     q.getType().toString());
+//                             qr.setCorrectAnswer(
+//                                     q.getCorrectAnswer());
+//                             qr.setOptions(
+//                                     q.getOptions());
+//                             qr.setExplanation(
+//                                     q.getExplanation());
+//                             qr.setDifficulty(
+//                                     q.getDifficulty());
+//                             qr.setTopicTags(
+//                                     q.getTopicTags());
+//                             return qr;
+//                         })
+//                         .collect(Collectors.toList())
+//         );
+
+//         return response;
+//     }
+// }
+
+
 package com.quizora.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quizora.dto.*;
 import com.quizora.entity.*;
 import com.quizora.repository.*;
@@ -12,138 +683,249 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class QuizService {
-    
-    private static final Logger logger = LoggerFactory.getLogger(QuizService.class);
-    
+
+    private static final Logger logger =
+            LoggerFactory.getLogger(QuizService.class);
+
     @Autowired
     private QuizRepository quizRepository;
-    
+
     @Autowired
     private QuestionRepository questionRepository;
-    
+
     @Autowired
     private QuizAttemptRepository quizAttemptRepository;
-    
+
     @Autowired
     private ContentExtractionService contentExtractionService;
-    
+
     @Autowired
     private AiIntegrationService aiIntegrationService;
-    
-    @Autowired
-    private TextExtractionService textExtractionService;
-    
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
+    /* =====================================================
+       NORMAL QUIZ GENERATION (Manual Input)
+       ===================================================== */
     @Transactional
-    public QuizResponse generateQuiz(QuizGenerationRequest request, String userId) {
+    public QuizResponse generateQuiz(
+            QuizGenerationRequest request,
+            String userId) {
+
         try {
-            // Extract content based on source type
-            String extractedContent = contentExtractionService.extractContent(
-                request.getSourceContent(), 
-                SourceType.valueOf(request.getSourceType())
+
+            String extractedContent =
+                    contentExtractionService.extractContent(
+                            request.getSourceContent(),
+                            SourceType.valueOf(request.getSourceType())
+                    );
+
+            return generateQuizFromText(
+                    userId,
+                    extractedContent,
+                    request.getTitle()
             );
-            
-            // Generate questions using AI (mock implementation for testing)
-            // List<String> generatedQuestions = aiIntegrationService.generateQuizQuestions(
-            //     extractedContent,
-            //     request.getQuestionCount() != null ? request.getQuestionCount() : 10,
-            //     request.getDifficulty() != null ? request.getDifficulty() : "medium",
-            //     request.getTopics() != null ? request.getTopics() : "general"
-            // );
-            
-            // Mock questions for testing
-            List<String> generatedQuestions = List.of(
-                "What is JavaScript? A programming language for web development.",
-                "What is a variable? A container for storing data values.",
-                "What is a function? A block of code designed to perform a particular task.",
-                "What is an array? A data structure that stores multiple values.",
-                "What is DOM? Document Object Model, programming interface for web documents."
-            );
-            
-            // Create quiz entity
-            Quiz quiz = new Quiz();
-            quiz.setTitle(request.getTitle());
-            quiz.setDescription(request.getDescription());
-            quiz.setUserId(userId);
-            quiz.setType(QuizType.valueOf(request.getType()));
-            quiz.setSourceContent(request.getSourceContent());
-            quiz.setSourceType(SourceType.valueOf(request.getSourceType()));
-            
-            quiz = quizRepository.save(quiz);
-            
-            // Parse and create questions
-            List<Question> questions = parseAndCreateQuestions(generatedQuestions, quiz);
-            
-            logger.info("Generated quiz with {} questions for user: {}", questions.size(), userId);
-            
-            return mapToQuizResponse(quiz, questions);
-            
+
         } catch (Exception e) {
             logger.error("Failed to generate quiz", e);
-            throw new RuntimeException("Failed to generate Quiz: " + e.getMessage());
+            throw new RuntimeException("Failed to generate quiz: " + e.getMessage());
         }
     }
 
-    private List<Question> parseAndCreateQuestions(List<String> questionTexts, Quiz quiz) {
-        List<Question> questions = new ArrayList<>();
-        
-        for (int i = 0; i < questionTexts.size(); i++) {
-            try {
-                String questionJson = questionTexts.get(i);
-                JsonNode questionNode = objectMapper.readTree(questionJson);
-                
+    /* =====================================================
+       FILE BASED QUIZ GENERATION
+       ===================================================== */
+    @Transactional
+    public QuizResponse generateQuizFromText(
+            String userId,
+            String extractedText,
+            String fileName) {
+
+        try {
+
+            List<QuizQuestionDTO> generatedQuestions =
+                    aiIntegrationService.generateQuizFromContent(
+                            extractedText,
+                            "medium",
+                            "general",
+                            10
+                    );
+
+            if (generatedQuestions.isEmpty()) {
+                throw new RuntimeException("No questions generated");
+            }
+
+            Quiz quiz = new Quiz();
+            quiz.setTitle("Quiz from " + fileName);
+            quiz.setDescription("Auto-generated quiz from uploaded file");
+            quiz.setUserId(userId);
+            quiz.setType(QuizType.MULTIPLE_CHOICE);
+            quiz.setSourceContent(extractedText);
+            quiz.setSourceType(SourceType.PDF);
+            quiz.setCreatedAt(LocalDateTime.now());
+            quiz.setUpdatedAt(LocalDateTime.now());
+
+            quiz = quizRepository.save(quiz);
+
+            List<Question> questions = new ArrayList<>();
+
+            for (QuizQuestionDTO dto : generatedQuestions) {
+
                 Question question = new Question();
                 question.setQuiz(quiz);
-                question.setQuestionText(questionNode.path("question").asText());
-                question.setType(QuestionType.valueOf(questionNode.path("type").asText()));
-                question.setCorrectAnswer(questionNode.path("correct_answer").asText());
-                
-                if (questionNode.has("options")) {
-                    question.setOptions(questionNode.path("options").asText());
-                }
-                
-                if (questionNode.has("explanation")) {
-                    question.setExplanation(questionNode.path("explanation").asText());
-                }
-                
-                if (questionNode.has("difficulty")) {
-                    question.setDifficulty(questionNode.path("difficulty").asInt());
-                }
-                
-                if (questionNode.has("topic_tags")) {
-                    question.setTopicTags(questionNode.path("topic_tags").asText());
-                }
-                
-                questions.add(questionRepository.save(question));
-                
-            } catch (Exception e) {
-                logger.error("Failed to parse question: {}", questionTexts.get(i), e);
-                // Create a fallback question
-                Question fallbackQuestion = new Question();
-                fallbackQuestion.setQuiz(quiz);
-                fallbackQuestion.setQuestionText(questionTexts.get(i));
-                fallbackQuestion.setType(QuestionType.MULTIPLE_CHOICE);
-                fallbackQuestion.setCorrectAnswer("A");
-                fallbackQuestion.setOptions("A. Option A\nB. Option B\nC. Option C\nD. Option D");
-                fallbackQuestion.setExplanation("Generated question - please review");
-                fallbackQuestion.setDifficulty(2);
-                fallbackQuestion.setTopicTags("general");
-                
-                questions.add(questionRepository.save(fallbackQuestion));
+                question.setQuestionText(dto.getQuestion());
+                question.setCorrectAnswer(dto.getAnswer());
+                question.setExplanation(dto.getExplanation());
+                question.setDifficulty(getDifficultyValue(dto.getDifficulty()));
+                question.setType(QuestionType.MULTIPLE_CHOICE);
+
+                // Store options as comma-separated
+                question.setOptions(String.join(",", dto.getOptions()));
+                question.setTopicTags(String.join(",", dto.getTopics()));
+
+                questions.add(question);
             }
+
+            questionRepository.saveAll(questions);
+
+            return mapToQuizResponse(quiz, questions);
+
+        } catch (Exception e) {
+            logger.error("Failed to generate quiz from text", e);
+            throw new RuntimeException("Quiz generation failed: " + e.getMessage());
         }
-        
-        return questions;
     }
 
-    private QuizResponse mapToQuizResponse(Quiz quiz, List<Question> questions) {
+    /* =====================================================
+       GET QUIZ
+       ===================================================== */
+    public QuizResponse getQuiz(Long quizId, String userId) {
+
+        Quiz quiz = quizRepository
+                .findByIdAndUserId(quizId, userId)
+                .orElseThrow(() -> new RuntimeException("Quiz not found"));
+
+        List<Question> questions =
+                questionRepository.findByQuizIdOrderById(quizId);
+
+        return mapToQuizResponse(quiz, questions);
+    }
+
+    /* =====================================================
+       SUBMIT QUIZ (FINAL CORRECT VERSION)
+       ===================================================== */
+    @Transactional
+    public QuizResultResponse submitQuiz(
+            Long quizId,
+            List<AnswerSubmitRequest> answers,
+            String userId) {
+
+        Quiz quiz = quizRepository.findByIdAndUserId(quizId, userId)
+                .orElseThrow(() -> new RuntimeException("Quiz not found"));
+
+        List<Question> questions =
+                questionRepository.findByQuizIdOrderById(quizId);
+
+        int correctCount = 0;
+        List<AnswerReviewResponse> reviewList = new ArrayList<>();
+
+        for (AnswerSubmitRequest submitted : answers) {
+
+            Question question = questions.stream()
+                    .filter(q -> q.getId().equals(submitted.getQuestionId()))
+                    .findFirst()
+                    .orElseThrow(() ->
+                            new RuntimeException("Question not found"));
+
+            List<String> options = new ArrayList<>();
+            if (question.getOptions() != null) {
+                String[] split = question.getOptions().split(",");
+                for (String opt : split) {
+                    options.add(opt.trim());
+                }
+            }
+
+            Integer selectedIndex = submitted.getSelectedAnswer();
+            String userAnswer = null;
+
+            if (selectedIndex != null &&
+                    selectedIndex >= 0 &&
+                    selectedIndex < options.size()) {
+                userAnswer = options.get(selectedIndex);
+            }
+
+            String correctAnswer = question.getCorrectAnswer();
+            boolean isCorrect = false;
+
+            if (userAnswer != null && correctAnswer != null) {
+                isCorrect = userAnswer.equalsIgnoreCase(correctAnswer);
+            }
+
+            if (isCorrect) correctCount++;
+
+            AnswerReviewResponse review = new AnswerReviewResponse();
+            review.setQuestion(question.getQuestionText());
+            review.setUserAnswer(userAnswer);
+            review.setCorrectAnswer(correctAnswer);
+            review.setIsCorrect(isCorrect);
+            review.setExplanation(question.getExplanation());
+
+            reviewList.add(review);
+        }
+
+        QuizAttempt attempt = new QuizAttempt();
+        attempt.setQuiz(quiz);
+        attempt.setUserId(userId);
+        attempt.setTotalQuestions(answers.size());
+        attempt.setCorrectAnswers(correctCount);
+        attempt.setScore(correctCount);
+        attempt.setCompletionTime(LocalDateTime.now());
+
+        quizAttemptRepository.save(attempt);
+
+        QuizResultResponse result = new QuizResultResponse();
+        result.setQuizId(quizId);
+        result.setTitle(quiz.getTitle());
+        result.setTotalQuestions(answers.size());
+        result.setCorrectAnswers(correctCount);
+        result.setScore(correctCount);
+        result.setPercentage(
+                answers.isEmpty()
+                        ? 0
+                        : ((double) correctCount / answers.size()) * 100
+        );
+        result.setAnswerReviews(reviewList);
+
+        return result;
+    }
+
+    /* =====================================================
+       GET USER QUIZZES
+       ===================================================== */
+    public List<QuizResponse> getUserQuizzes(String userId) {
+
+        List<Quiz> quizzes =
+                quizRepository.findByUserIdOrderByCreatedAtDesc(userId);
+
+        return quizzes.stream()
+                .map(q -> {
+                    List<Question> questions =
+                            questionRepository.findByQuizIdOrderById(q.getId());
+                    return mapToQuizResponse(q, questions);
+                })
+                .collect(Collectors.toList());
+    }
+
+    /* =====================================================
+       HELPER METHODS
+       ===================================================== */
+    private QuizResponse mapToQuizResponse(
+            Quiz quiz,
+            List<Question> questions) {
+
         QuizResponse response = new QuizResponse();
         response.setId(quiz.getId());
         response.setTitle(quiz.getTitle());
@@ -151,8 +933,9 @@ public class QuizService {
         response.setType(quiz.getType().toString());
         response.setSourceType(quiz.getSourceType().toString());
         response.setSourceContent(quiz.getSourceContent());
-        response.setQuestions(questions.stream()
-                .map(q -> {
+
+        response.setQuestions(
+                questions.stream().map(q -> {
                     QuestionResponse qr = new QuestionResponse();
                     qr.setId(q.getId());
                     qr.setQuestionText(q.getQuestionText());
@@ -163,158 +946,19 @@ public class QuizService {
                     qr.setDifficulty(q.getDifficulty());
                     qr.setTopicTags(q.getTopicTags());
                     return qr;
-                })
-                .collect(Collectors.toList()));
-        
+                }).collect(Collectors.toList())
+        );
+
         return response;
     }
 
-    public QuizResponse getQuiz(Long quizId, String userId) {
-        Quiz quiz = quizRepository.findByIdAndUserId(quizId, userId)
-                .orElseThrow(() -> new RuntimeException("Quiz not found"));
-        
-        List<Question> questions = questionRepository.findByQuizIdOrderById(quizId);
-        
-        return mapToQuizResponse(quiz, questions);
-    }
-
-    @Transactional
-    public QuizResultResponse submitQuiz(Long quizId, List<AnswerReviewResponse> answers, String userId) {
-        try {
-            Quiz quiz = quizRepository.findByIdAndUserId(quizId, userId)
-                    .orElseThrow(() -> new RuntimeException("Quiz not found"));
-            
-            QuizAttempt attempt = new QuizAttempt();
-            attempt.setQuiz(quiz);
-            attempt.setUserId(userId);
-            attempt.setTotalQuestions(answers.size());
-            
-            int correctCount = 0;
-            List<AnswerReviewResponse> answerReviews = new ArrayList<>();
-            
-            for (int i = 0; i < answers.size(); i++) {
-                AnswerReviewResponse review = new AnswerReviewResponse();
-                review.setQuestion(answers.get(i).getQuestion());
-                review.setUserAnswer(answers.get(i).getUserAnswer());
-                review.setCorrectAnswer(answers.get(i).getCorrectAnswer());
-                review.setIsCorrect(answers.get(i).getIsCorrect());
-                
-                if (answers.get(i).getIsCorrect()) {
-                    correctCount++;
-                }
-                
-                answerReviews.add(review);
-            }
-            
-            attempt.setCorrectAnswers(correctCount);
-            attempt.setScore(correctCount);
-            attempt.setCompletionTime(LocalDateTime.now());
-            
-            quizAttemptRepository.save(attempt);
-            
-            QuizResultResponse result = new QuizResultResponse();
-            result.setQuizId(quizId);
-            result.setTitle(quiz.getTitle());
-            result.setTotalQuestions(answers.size());
-            result.setCorrectAnswers(correctCount);
-            result.setScore(correctCount);
-            result.setPercentage((double) correctCount / answers.size() * 100);
-            result.setAnswerReviews(answerReviews);
-            
-            logger.info("Quiz submitted: {} correct out of {} for user: {}", correctCount, answers.size(), userId);
-            
-            return result;
-            
-        } catch (Exception e) {
-            logger.error("Failed to submit quiz", e);
-            throw new RuntimeException("Failed to submit Quiz: " + e.getMessage());
-        }
-    }
-
-    public List<QuizResponse> getUserQuizzes(String userId) {
-        List<Quiz> quizzes = quizRepository.findByUserIdOrderByCreatedAtDesc(userId);
-
-
-        
-        return quizzes.stream()
-                .map(quiz -> {
-                    List<Question> questions = questionRepository.findByQuizIdOrderById(quiz.getId());
-                    return mapToQuizResponse(quiz, questions);
-                })
-                .collect(Collectors.toList());
-    }
-
-    @Transactional
-    public QuizResponse generateQuizFromText(String userId, String extractedText, String fileName) {
-        try {
-            logger.info("Generating quiz from extracted text for user: {}", userId);
-            
-            // Generate questions using AI
-            List<QuizQuestionDTO> generatedQuestions = aiIntegrationService.generateQuizFromContent(
-                extractedText,
-                "medium", // Default difficulty
-                "general", // Default topics
-                10 // Default question count
-            );
-            
-            if (generatedQuestions.isEmpty()) {
-                throw new RuntimeException("Failed to generate questions from content");
-            }
-            
-            // Create quiz entity
-            Quiz quiz = new Quiz();
-            quiz.setTitle("Quiz from " + fileName);
-            quiz.setDescription("Auto-generated quiz from uploaded file: " + fileName);
-            quiz.setUserId(userId);
-            quiz.setType(QuizType.MULTIPLE_CHOICE);
-            quiz.setSourceContent(extractedText);
-            quiz.setSourceType(SourceType.PDF); // Default to PDF for uploaded files
-            quiz.setCreatedAt(LocalDateTime.now());
-            quiz.setUpdatedAt(LocalDateTime.now());
-            
-            quiz = quizRepository.save(quiz);
-            
-            // Create questions from AI response
-            List<Question> questions = new ArrayList<>();
-            for (QuizQuestionDTO dto : generatedQuestions) {
-                Question question = new Question();
-                question.setQuiz(quiz);
-                question.setQuestionText(dto.getQuestion());
-                question.setCorrectAnswer(dto.getAnswer());
-                question.setExplanation(dto.getExplanation());
-                question.setDifficulty(getDifficultyValue(dto.getDifficulty()));
-                question.setType(QuestionType.MULTIPLE_CHOICE);
-                
-                // Convert options array to JSON string
-                String optionsJson = String.join(",", dto.getOptions());
-                question.setOptions(optionsJson);
-                
-                // Set topic tags from topics array
-                String topicsJson = String.join(",", dto.getTopics());
-                question.setTopicTags(topicsJson);
-                
-                questions.add(question);
-            }
-            
-            questionRepository.saveAll(questions);
-            
-            logger.info("Successfully created quiz with {} questions from file: {}", questions.size(), fileName);
-            
-            return mapToQuizResponse(quiz, questions);
-            
-        } catch (Exception e) {
-            logger.error("Failed to generate quiz from text", e);
-            throw new RuntimeException("Failed to generate quiz from text: " + e.getMessage());
-        }
-    }
-
     private Integer getDifficultyValue(String difficulty) {
-        if (difficulty == null) return 2; // Default to medium
+        if (difficulty == null) return 2;
+
         switch (difficulty.toLowerCase()) {
             case "beginner": return 1;
-            case "intermediate": return 2;
             case "advanced": return 3;
-            default: return 2; // Default to medium
+            default: return 2;
         }
     }
 }

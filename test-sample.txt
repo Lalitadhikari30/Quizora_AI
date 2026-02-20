@@ -1,0 +1,13 @@
+This is a sample document for testing text extraction functionality.
+
+It contains multiple sentences and paragraphs to verify that the ContentExtractionService is working properly.
+
+The purpose is to extract this text and verify that:
+1. Text extraction is successful
+2. Extracted text is not empty
+3. Extracted text length is correct
+4. Text content is preserved accurately
+
+This should demonstrate that the new architecture with persistent ExtractedContent storage is working correctly.
+
+End of test document.

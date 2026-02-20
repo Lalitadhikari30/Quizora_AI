@@ -2,10 +2,12 @@ package com.quizora.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+
+import com.quizora.config.SupabaseProperties;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -19,19 +21,15 @@ public class SupabaseService {
     
     private static final Logger logger = LoggerFactory.getLogger(SupabaseService.class);
     
-    @Value("${SUPABASE_URL}")
-    private String supabaseUrl;
-    
-    @Value("${SUPABASE_SERVICE_KEY}")
-    private String supabaseServiceKey;
-    
-    @Value("${SUPABASE_STORAGE_BUCKET}")
-    private String storageBucket;
+    private final SupabaseProperties supabaseProperties;
     
     private final WebClient webClient;
 
-    public SupabaseService() {
+    public SupabaseService(SupabaseProperties supabaseProperties) {
+        this.supabaseProperties = supabaseProperties;
         this.webClient = WebClient.builder().build();
+        // Validate configuration at construction
+        supabaseProperties.validateAndLog();
     }
 
     /* -------- JWT VALIDATION -------- */
@@ -110,134 +108,83 @@ public class SupabaseService {
 
     public String uploadFile(byte[] fileData, String fileName, String userId, String bucketName) {
         try {
+            // Validate file data
+            if (fileData == null || fileData.length == 0) {
+                throw new RuntimeException("File data cannot be null or empty");
+            }
+            
+            // Validate file format for PDF
+            if (fileName.toLowerCase().endsWith(".pdf")) {
+                if (fileData.length < 4) {
+                    throw new RuntimeException("Invalid PDF file: file too small");
+                }
+                String header = new String(fileData, 0, 4);
+                if (!header.startsWith("%PDF")) {
+                    throw new RuntimeException("Invalid PDF file format");
+                }
+            }
+            
             String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8.toString());
             String objectPath = userId + "/" + encodedFileName;
             
             // Use correct Supabase upload endpoint
-            String uploadUrl = String.format("%s/storage/v1/object/%s/%s", supabaseUrl, bucketName, objectPath);
+            String uploadUrl = String.format("%s/storage/v1/object/%s/%s", supabaseProperties.getUrl(), bucketName, objectPath);
             
-            logger.info("Uploading to Supabase URL: {}", uploadUrl);
+            logger.info("=== SUPABASE UPLOAD START ===");
+            logger.info("Upload URL: {}", uploadUrl);
             logger.info("File size: {} bytes", fileData.length);
             logger.info("Bucket name: {}", bucketName);
             logger.info("Object path: {}", objectPath);
+            logger.info("Service Role Key (first 10 chars): {}...", supabaseProperties.getServiceRoleKey().substring(0, Math.min(10, supabaseProperties.getServiceRoleKey().length())));
             
             try {
-                // Use correct Supabase upload format
+                // Use correct Supabase upload format with proper auth
                 String response = webClient.post()
                         .uri(uploadUrl)
-                        .header("Authorization", "Bearer " + supabaseServiceKey)
+                        .header("Authorization", "Bearer " + supabaseProperties.getServiceRoleKey())
+                        .header("apikey", supabaseProperties.getServiceRoleKey())
                         .header("Content-Type", "application/octet-stream")
                         .bodyValue(fileData)
                         .retrieve()
+                        .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), 
+                            clientResponse -> clientResponse.bodyToMono(String.class)
+                                .defaultIfEmpty("No error body")
+                                .map(body -> {
+                                    logger.error("Supabase API Error - Status: {}, Body: {}", clientResponse.statusCode(), body);
+                                    return new RuntimeException("Supabase upload failed: " + 
+                                        clientResponse.statusCode() + " - " + body);
+                                }))
                         .bodyToMono(String.class)
                         .block();
                 
-                String publicUrl = String.format("%s/storage/v1/object/public/%s/%s", supabaseUrl, bucketName, objectPath);
+                String publicUrl = String.format("%s/storage/v1/object/public/%s/%s", supabaseProperties.getUrl(), bucketName, objectPath);
                 
-                logger.info("Uploaded file to Supabase storage: {}", publicUrl);
-                logger.info("Supabase response: {}", response);
+                logger.info("Upload successful!");
+                logger.info("Public URL: {}", publicUrl);
+                logger.info("Response: {}", response);
+                logger.info("=== SUPABASE UPLOAD END ===");
+                
                 return publicUrl;
                 
             } catch (Exception uploadError) {
-                logger.warn("Supabase upload failed: {}", uploadError.getMessage());
-                logger.warn("Upload error type: {}", uploadError.getClass().getSimpleName());
+                logger.error("Supabase upload failed: {}", uploadError.getMessage(), uploadError);
+                logger.error("Upload error type: {}", uploadError.getClass().getSimpleName());
                 
-                // Try to create bucket if it doesn't exist - use correct endpoint
-                try {
-                    logger.info("Attempting to create bucket: {}", bucketName);
-                    String createBucketUrl = String.format("%s/storage/v1/buckets", supabaseUrl);
-                    String bucketPayload = String.format("{\"id\":\"%s\",\"name\":\"%s\",\"public\":true,\"file_size_limit\":52428800,\"allowed_mime_types\":[\"*/*\"]}", bucketName, bucketName);
-                    
-                    String createResponse = webClient.post()
-                            .uri(createBucketUrl)
-                            .header("Authorization", "Bearer " + supabaseServiceKey)
-                            .header("Content-Type", "application/json")
-                            .bodyValue(bucketPayload)
-                            .retrieve()
-                            .bodyToMono(String.class)
-                            .block();
-                    
-                    logger.info("Created bucket: {}", createResponse);
-                    
-                    // Set bucket policies to allow public access and uploads
-                    try {
-                        logger.info("Setting bucket policies for public access and uploads...");
-                        String policyUrl = String.format("%s/storage/v1/buckets/%s/policy", supabaseUrl, bucketName);
-                        
-                        // Policy for SELECT operations (public access)
-                        String selectPolicyPayload = String.format("{\"name\":\"Public Select Access\",\"definition\":{\"roles\":[\"anon\",\"authenticated\"],\"type\":\"select\",\"table\":\"storage.objects\",\"query\":{\"eq\":{\"bucket_id\":\"%s\"}}}}", bucketName);
-                        
-                        // Policy for INSERT operations (file uploads)
-                        String insertPolicyPayload = String.format("{\"name\":\"Upload Access\",\"definition\":{\"roles\":[\"authenticated\"],\"type\":\"insert\",\"table\":\"storage.objects\",\"query\":{\"eq\":{\"bucket_id\":\"%s\"}}}}", bucketName);
-                        
-                        // Policy for UPDATE operations (file updates)
-                        String updatePolicyPayload = String.format("{\"name\":\"Update Access\",\"definition\":{\"roles\":[\"authenticated\"],\"type\":\"update\",\"table\":\"storage.objects\",\"query\":{\"eq\":{\"bucket_id\":\"%s\"}}}}", bucketName);
-                        
-                        // Apply SELECT policy
-                        String selectResponse = webClient.post()
-                                .uri(policyUrl)
-                                .header("Authorization", "Bearer " + supabaseServiceKey)
-                                .header("Content-Type", "application/json")
-                                .bodyValue(selectPolicyPayload)
-                                .retrieve()
-                                .bodyToMono(String.class)
-                                .block();
-                        
-                        logger.info("Set SELECT policy: {}", selectResponse);
-                        
-                        // Apply INSERT policy
-                        String insertResponse = webClient.post()
-                                .uri(policyUrl)
-                                .header("Authorization", "Bearer " + supabaseServiceKey)
-                                .header("Content-Type", "application/json")
-                                .bodyValue(insertPolicyPayload)
-                                .retrieve()
-                                .bodyToMono(String.class)
-                                .block();
-                        
-                        logger.info("Set INSERT policy: {}", insertResponse);
-                        
-                        // Apply UPDATE policy
-                        String updateResponse = webClient.post()
-                                .uri(policyUrl)
-                                .header("Authorization", "Bearer " + supabaseServiceKey)
-                                .header("Content-Type", "application/json")
-                                .bodyValue(updatePolicyPayload)
-                                .retrieve()
-                                .bodyToMono(String.class)
-                                .block();
-                        
-                        logger.info("Set UPDATE policy: {}", updateResponse);
-                    } catch (Exception policyError) {
-                        logger.warn("Failed to set bucket policy: {}", policyError.getMessage());
-                    }
-                    
-                    // Now try uploading again
-                    logger.info("Retrying upload after bucket creation...");
-                    String response = webClient.post()
-                            .uri(uploadUrl)
-                            .header("Authorization", "Bearer " + supabaseServiceKey)
-                            .header("Content-Type", "application/octet-stream")
-                            .bodyValue(fileData)
-                            .retrieve()
-                            .bodyToMono(String.class)
-                            .block();
-                    
-                    String publicUrl = String.format("%s/storage/v1/object/public/%s/%s", supabaseUrl, bucketName, objectPath);
-                    
-                    logger.info("Uploaded file to Supabase after bucket creation: {}", publicUrl);
-                    return publicUrl;
-                    
-                } catch (Exception bucketError) {
-                    logger.error("Failed to create or configure bucket: {}", bucketError.getMessage());
-                    logger.error("Bucket error type: {}", bucketError.getClass().getSimpleName());
-                    throw uploadError; // Throw the original upload error
+                // Check if it's an authentication error
+                if (uploadError.getMessage() != null && 
+                    (uploadError.getMessage().contains("403") || 
+                     uploadError.getMessage().contains("Unauthorized") ||
+                     uploadError.getMessage().contains("Invalid Compact JWS"))) {
+                    logger.error("AUTHENTICATION ERROR: Service role key may be invalid or expired");
+                    logger.error("Please check Supabase dashboard for correct service role key");
                 }
+                
+                throw new RuntimeException("File upload failed: " + uploadError.getMessage());
             }
             
         } catch (Exception e) {
             logger.error("Failed to upload file to Supabase", e);
-            throw new RuntimeException("Failed to upload file: " + e.getMessage());
+            throw new RuntimeException("Upload failed: " + e.getMessage());
         }
     }
 
@@ -247,7 +194,7 @@ public class SupabaseService {
             
             byte[] fileData = webClient.get()
                     .uri(downloadUrl)
-                    .header("Authorization", "Bearer " + supabaseServiceKey)
+                    .header("Authorization", "Bearer " + supabaseProperties.getServiceRoleKey())
                     .retrieve()
                     .bodyToMono(byte[].class)
                     .block();
@@ -267,7 +214,7 @@ public class SupabaseService {
             
             webClient.delete()
                     .uri(deleteUrl)
-                    .header("Authorization", "Bearer " + supabaseServiceKey)
+                    .header("Authorization", "Bearer " + supabaseProperties.getServiceRoleKey())
                     .retrieve()
                     .bodyToMono(Void.class)
                     .block();
@@ -282,7 +229,7 @@ public class SupabaseService {
 
     public Map<String, Object> registerUser(String email, String password, String firstName, String lastName) {
         try {
-            String signUpUrl = String.format("%s/auth/v1/signup", supabaseUrl);
+            String signUpUrl = String.format("%s/auth/v1/signup", supabaseProperties.getUrl());
             
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("email", email);
@@ -295,8 +242,8 @@ public class SupabaseService {
             
             Map<String, Object> response = webClient.post()
                     .uri(signUpUrl)
-                    .header("Authorization", "Bearer " + supabaseServiceKey)
-                    .header("apikey", supabaseServiceKey)
+                    .header("Authorization", "Bearer " + supabaseProperties.getServiceRoleKey())
+                    .header("apikey", supabaseProperties.getServiceRoleKey())
                     .header("Content-Type", "application/json")
                     .bodyValue(requestBody)
                     .retrieve()
@@ -314,7 +261,7 @@ public class SupabaseService {
 
     public Map<String, Object> authenticateUser(String email, String password) {
         try {
-            String signInUrl = String.format("%s/auth/v1/token?grant_type=password", supabaseUrl);
+            String signInUrl = String.format("%s/auth/v1/token?grant_type=password", supabaseProperties.getUrl());
             
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("email", email);
@@ -322,8 +269,8 @@ public class SupabaseService {
             
             Map<String, Object> response = webClient.post()
                     .uri(signInUrl)
-                    .header("Authorization", "Bearer " + supabaseServiceKey)
-                    .header("apikey", supabaseServiceKey)
+                    .header("Authorization", "Bearer " + supabaseProperties.getServiceRoleKey())
+                    .header("apikey", supabaseProperties.getServiceRoleKey())
                     .header("Content-Type", "application/json")
                     .bodyValue(requestBody)
                     .retrieve()
@@ -350,12 +297,12 @@ public class SupabaseService {
 
     public Map<String, Object> getUserInfo(String token) {
         try {
-            String userUrl = String.format("%s/auth/v1/user", supabaseUrl);
+            String userUrl = String.format("%s/auth/v1/user", supabaseProperties.getUrl());
             
             Map<String, Object> response = webClient.get()
                     .uri(userUrl)
                     .header("Authorization", "Bearer " + token)
-                    .header("apikey", supabaseServiceKey)
+                    .header("apikey", supabaseProperties.getServiceRoleKey())
                     .retrieve()
                     .bodyToMono(Map.class)
                     .block();
@@ -371,12 +318,12 @@ public class SupabaseService {
 
     public void logoutUser(String token) {
         try {
-            String logoutUrl = String.format("%s/auth/v1/logout", supabaseUrl);
+            String logoutUrl = String.format("%s/auth/v1/logout", supabaseProperties.getUrl());
             
             webClient.post()
                     .uri(logoutUrl)
                     .header("Authorization", "Bearer " + token)
-                    .header("apikey", supabaseServiceKey)
+                    .header("apikey", supabaseProperties.getServiceRoleKey())
                     .retrieve()
                     .bodyToMono(Void.class)
                     .block();
@@ -391,15 +338,15 @@ public class SupabaseService {
 
     public void resetPassword(String email) {
         try {
-            String resetUrl = String.format("%s/auth/v1/recover", supabaseUrl);
+            String resetUrl = String.format("%s/auth/v1/recover", supabaseProperties.getUrl());
             
             Map<String, String> requestBody = new HashMap<>();
             requestBody.put("email", email);
             
             webClient.post()
                     .uri(resetUrl)
-                    .header("Authorization", "Bearer " + supabaseServiceKey)
-                    .header("apikey", supabaseServiceKey)
+                    .header("Authorization", "Bearer " + supabaseProperties.getServiceRoleKey())
+                    .header("apikey", supabaseProperties.getServiceRoleKey())
                     .header("Content-Type", "application/json")
                     .bodyValue(requestBody)
                     .retrieve()
@@ -416,7 +363,7 @@ public class SupabaseService {
 
     public boolean validateUser(String userId, String token) {
         try {
-            String userUrl = String.format("%s/auth/v1/user", supabaseUrl);
+            String userUrl = String.format("%s/auth/v1/user", supabaseProperties.getUrl());
             
             Map<String, Object> response = webClient.get()
                     .uri(userUrl)

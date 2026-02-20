@@ -1,0 +1,1 @@
+This is a test file for Supabase upload verification. The content should be extracted and uploaded successfully to Supabase storage bucket.

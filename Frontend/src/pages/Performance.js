@@ -94,7 +94,7 @@ const Performance = () => {
     };
 
     fetchPerformanceData();
-  }, [timeRange]);
+  }, []);
 
   if (loading) {
     return (

@@ -81,7 +81,7 @@ const QuizGeneration = () => {
         title: title.trim(),
         sourceContent: sourceContent.trim(),
         sourceType: "TEXT",
-        type: questionType,
+        type: "MULTIPLE_CHOICE",
         questionCount: parseInt(questionCount),
         difficulty: difficulty,
         timePerQuestion: parseInt(timePerQuestion),

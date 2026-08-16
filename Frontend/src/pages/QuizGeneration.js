@@ -56,10 +56,8 @@ const QuizGeneration = () => {
     onDrop,
     multiple: false,
     accept: {
-      "application/pdf": [".pdf"],
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
-      "application/msword": [".doc"],
-      "text/plain": [".txt"]
+      "application/msword": [".doc"]
     }
   });
 
@@ -397,7 +395,7 @@ const QuizGeneration = () => {
                 Drop your document here or click to browse
               </p>
               <p className="text-gray-400 font-mono text-xs">
-                Supports PDF, DOCX, DOC, and TXT files (up to 50MB)
+                Supports DOCX and DOC files (up to 50MB)
               </p>
             </div>
 

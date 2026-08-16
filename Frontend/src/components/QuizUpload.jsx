@@ -17,11 +17,11 @@ const QuizUpload = ({ token, onQuizGenerated }) => {
             }
             
             // Validate file type
-            const allowedTypes = ['pdf', 'docx', 'txt'];
+            const allowedTypes = ['docx', 'doc'];
             const fileExtension = selectedFile.name.split('.').pop().toLowerCase();
             
             if (!allowedTypes.includes(fileExtension)) {
-                setError('Only PDF, DOCX, and TXT files are allowed');
+                setError('Only DOCX and DOC files are allowed');
                 return;
             }
             
@@ -95,12 +95,12 @@ const QuizUpload = ({ token, onQuizGenerated }) => {
                         📄
                     </div>
                     <h3>Upload Document for Quiz Generation</h3>
-                    <p>Supports PDF, DOCX, and TXT files (max 10MB)</p>
+                    <p>Supports DOCX and DOC files (max 10MB)</p>
                     
                     <input
                         id="file-input"
                         type="file"
-                        accept=".pdf,.docx,.txt"
+                        accept=".docx,.doc"
                         onChange={handleFileChange}
                         style={{ display: 'none' }}
                     />

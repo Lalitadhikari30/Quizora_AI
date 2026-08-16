@@ -2,6 +2,10 @@
 
 A fully integrated AI-powered quiz generation and interview practice platform built with React (Frontend) and Spring Boot (Backend).
 
+<p align="center">
+  <img src="./quizora_AI.jpg" alt="Quizora AI Platform" width="100%">
+</p>
+
 ## 🚀 Features
 
 ### Frontend (React)

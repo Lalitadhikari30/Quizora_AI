@@ -159,35 +159,8 @@ const Login = () => {
             </div>
 
             <p className="text-gray-400">
-
               Welcome back! Sign in to continue learning
-
             </p>
-
-            <div className="text-xs text-gray-500 bg-blue-900/20 border border-blue-800/30 rounded-lg p-3">
-
-              <p className="flex items-center">
-
-                <span className="mr-2">ℹ️</span>
-
-                If you just registered, please check your email for a confirmation link.
-
-              </p>
-
-              {process.env.NODE_ENV === 'development' && (
-
-                <p className="flex items-center mt-2 text-orange-400">
-
-                  <span className="mr-2">🔧</span>
-
-                  Development mode: Automatic fallback if login issues occur.
-
-                </p>
-
-              )}
-
-            </div>
-
           </div>
 
 

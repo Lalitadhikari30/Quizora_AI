@@ -29,7 +29,6 @@ const QuizGeneration = () => {
   const [customTotalMinutes, setCustomTotalMinutes] = useState(10); // minutes
   const [useCustomTotalTime, setUseCustomTotalTime] = useState(false);
   const [difficulty, setDifficulty] = useState("INTERMEDIATE");
-  const [questionType, setQuestionType] = useState("MULTIPLE_CHOICE");
 
   // Calculated total time in seconds
   const calculatedTotalSeconds = useCustomTotalTime

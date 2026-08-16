@@ -137,11 +137,12 @@ const Interview = () => {
         }
       }, 4000); // 4-second delay for welcome/question speak warm-up
 
-      return () => {
+        return () => {
         clearTimeout(speakTimer);
         clearTimeout(listenTimer);
       };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentQuestionObj, showSetup, recognition]);
 
   const toggleListening = () => {
@@ -166,7 +167,7 @@ const Interview = () => {
   };
 
   // === SILENCE DETECTION AND INACTIVITY TIMEOUT ===
-  const [silenceTime, setSilenceTime] = useState(0);
+  const [, setSilenceTime] = useState(0);
 
   useEffect(() => {
     setSilenceTime(0);
@@ -202,6 +203,7 @@ const Interview = () => {
     return () => {
       if (silenceInterval) clearInterval(silenceInterval);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showSetup, currentSession]);
 
   // General Timer effect

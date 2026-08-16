@@ -6,8 +6,7 @@ import {
   HelpCircle,
   PlusCircle,
   Target,
-  TrendingUp,
-  XCircle
+  TrendingUp
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -30,7 +29,6 @@ const Performance = () => {
   const navigate = useNavigate();
   const recentResult = location.state?.result;
 
-  const [timeRange, setTimeRange] = useState("all");
   const [performanceData, setPerformanceData] = useState([]);
   const [categoryData, setCategoryData] = useState([]);
   const [recentAttempts, setRecentAttempts] = useState([]);

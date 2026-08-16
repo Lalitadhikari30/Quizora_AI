@@ -9,6 +9,9 @@ public class QuizResponse {
     private String type;
     private String sourceType;
     private String sourceContent;
+    private Integer questionCount;
+    private Integer timeLimit;
+    private Integer timePerQuestion;
     private List<QuestionResponse> questions;
     
     // Getters and Setters
@@ -30,6 +33,15 @@ public class QuizResponse {
     public String getSourceContent() { return sourceContent; }
     public void setSourceContent(String sourceContent) { this.sourceContent = sourceContent; }
     
+    public Integer getQuestionCount() { return questionCount; }
+    public void setQuestionCount(Integer questionCount) { this.questionCount = questionCount; }
+
+    public Integer getTimeLimit() { return timeLimit; }
+    public void setTimeLimit(Integer timeLimit) { this.timeLimit = timeLimit; }
+
+    public Integer getTimePerQuestion() { return timePerQuestion; }
+    public void setTimePerQuestion(Integer timePerQuestion) { this.timePerQuestion = timePerQuestion; }
+
     public List<QuestionResponse> getQuestions() { return questions; }
     public void setQuestions(List<QuestionResponse> questions) { this.questions = questions; }
 }

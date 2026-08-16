@@ -12,10 +12,11 @@ export const interviewService = {
   },
 
   // Submit answer to interview question
-  async submitAnswer(sessionId, question, userAnswer) {
+  async submitAnswer(sessionId, questionId, answerText) {
     try {
-      const response = await api.post(`/api/interview/${sessionId}/answer`, null, {
-        params: { question, userAnswer }
+      const response = await api.post(`/api/interview/${sessionId}/answer`, {
+        questionId: questionId?.toString(),
+        answerText: answerText
       });
       return response.data;
     } catch (error) {

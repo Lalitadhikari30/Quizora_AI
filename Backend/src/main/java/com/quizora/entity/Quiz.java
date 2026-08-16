@@ -24,7 +24,7 @@ public class Quiz {
     @Column(nullable = false)
     private QuizType type;
     
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String sourceContent;
     
     @Column(name = "source_type")

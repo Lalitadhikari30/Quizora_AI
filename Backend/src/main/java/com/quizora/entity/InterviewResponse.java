@@ -1,11 +1,20 @@
 package com.quizora.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "interview_responses")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class InterviewResponse {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -14,27 +23,30 @@ public class InterviewResponse {
     @JoinColumn(name = "session_id", nullable = false)
     private InterviewSession interviewSession;
     
-    @Column(nullable = false)
-    private String question;
+    @Column(name = "question_text", nullable = false, columnDefinition = "TEXT")
+    private String questionText;
+    
+    @Column(name = "answer_text", nullable = false, columnDefinition = "TEXT")
+    private String answerText = "";
     
     @Column(nullable = false)
-    private String userAnswer;
+    private Integer score = 0;
     
-    @Column(nullable = false)
-    private String correctAnswer;
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String strengths = "";
     
-    @Column(nullable = false)
-    private Boolean isCorrect;
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String improvements = "";
     
-    @Column(name = "response_time_ms")
-    private Integer responseTimeMs;
+    @Column(name = "sequence_number", nullable = false)
+    private Integer sequenceNumber;
+    
+    @Column(name = "difficulty_level")
+    private String difficultyLevel;
     
     @Column(name = "created_at", nullable = false)
+    @CreationTimestamp
     private LocalDateTime createdAt;
-    
-    public InterviewResponse() {
-        this.createdAt = LocalDateTime.now();
-    }
     
     // Getters and Setters
     public Long getId() { return id; }
@@ -43,20 +55,26 @@ public class InterviewResponse {
     public InterviewSession getInterviewSession() { return interviewSession; }
     public void setInterviewSession(InterviewSession interviewSession) { this.interviewSession = interviewSession; }
     
-    public String getQuestion() { return question; }
-    public void setQuestion(String question) { this.question = question; }
+    public String getQuestionText() { return questionText; }
+    public void setQuestionText(String questionText) { this.questionText = questionText; }
     
-    public String getUserAnswer() { return userAnswer; }
-    public void setUserAnswer(String userAnswer) { this.userAnswer = userAnswer; }
+    public String getAnswerText() { return answerText; }
+    public void setAnswerText(String answerText) { this.answerText = answerText; }
     
-    public String getCorrectAnswer() { return correctAnswer; }
-    public void setCorrectAnswer(String correctAnswer) { this.correctAnswer = correctAnswer; }
+    public Integer getScore() { return score; }
+    public void setScore(Integer score) { this.score = score; }
     
-    public Boolean getIsCorrect() { return isCorrect; }
-    public void setIsCorrect(Boolean isCorrect) { this.isCorrect = isCorrect; }
+    public String getStrengths() { return strengths; }
+    public void setStrengths(String strengths) { this.strengths = strengths; }
     
-    public Integer getResponseTimeMs() { return responseTimeMs; }
-    public void setResponseTimeMs(Integer responseTimeMs) { this.responseTimeMs = responseTimeMs; }
+    public String getImprovements() { return improvements; }
+    public void setImprovements(String improvements) { this.improvements = improvements; }
+    
+    public Integer getSequenceNumber() { return sequenceNumber; }
+    public void setSequenceNumber(Integer sequenceNumber) { this.sequenceNumber = sequenceNumber; }
+    
+    public String getDifficultyLevel() { return difficultyLevel; }
+    public void setDifficultyLevel(String difficultyLevel) { this.difficultyLevel = difficultyLevel; }
     
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

@@ -1,6 +1,7 @@
 package com.quizora.dto;
 
 public class AnswerReviewResponse {
+    private Long questionId;
     private String question;
     private String userAnswer;
     private String correctAnswer;
@@ -8,6 +9,9 @@ public class AnswerReviewResponse {
     private String explanation;
     
     // Getters and Setters
+    public Long getQuestionId() { return questionId; }
+    public void setQuestionId(Long questionId) { this.questionId = questionId; }
+
     public String getQuestion() { return question; }
     public void setQuestion(String question) { this.question = question; }
     

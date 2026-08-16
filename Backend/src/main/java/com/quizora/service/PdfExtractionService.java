@@ -27,14 +27,20 @@ public class PdfExtractionService {
     }
 
     public String extractTextFromPdfStream(InputStream pdfStream) {
-        try (PDDocument document = PDDocument.load(pdfStream)) {
+    try {
+        // Read stream fully into memory first
+        byte[] pdfBytes = pdfStream.readAllBytes();
+
+        try (PDDocument document = PDDocument.load(pdfBytes)) {
             PDFTextStripper stripper = new PDFTextStripper();
             String text = stripper.getText(document);
             logger.info("Successfully extracted text from PDF stream");
             return text.trim();
-        } catch (IOException e) {
-            logger.error("Failed to extract text from PDF stream", e);
-            throw new RuntimeException("Failed to extract text from PDF: " + e.getMessage());
         }
+
+    } catch (IOException e) {
+        logger.error("Failed to extract text from PDF stream", e);
+        throw new RuntimeException("Failed to extract text from PDF: " + e.getMessage());
     }
+}
 }

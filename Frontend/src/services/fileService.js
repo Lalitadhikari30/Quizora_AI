@@ -24,11 +24,7 @@ export const fileService = {
       formData.append(key, quizOptions[key]);
     });
 
-    const response = await api.post('/api/upload/quiz', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+    const response = await api.post('/api/upload/quiz', formData);
     return response.data;
   },
 

@@ -14,22 +14,22 @@ public class UserPerformance {
     private String userId;
     
     @Column(nullable = false)
-    private Integer totalQuizzesTaken;
+    private Integer totalQuizzesTaken = 0;
     
     @Column(nullable = false)
-    private Double averageQuizScore;
+    private Double averageQuizScore = 0.0;
     
     @Column(nullable = false)
-    private Integer totalInterviewsTaken;
+    private Integer totalInterviewsTaken = 0;
     
     @Column(nullable = false)
-    private Double averageInterviewScore;
+    private Double averageInterviewScore = 0.0;
     
     @Column(name = "strongest_topics", columnDefinition = "TEXT")
-    private String strongestTopics;
+    private String strongestTopics = "";
     
     @Column(name = "improvement_areas", columnDefinition = "TEXT")
-    private String improvementAreas;
+    private String improvementAreas = "";
     
     @Column(name = "last_updated", nullable = false)
     private LocalDateTime lastUpdated;
@@ -38,6 +38,12 @@ public class UserPerformance {
     private LocalDateTime createdAt;
     
     public UserPerformance() {
+        this.totalQuizzesTaken = 0;
+        this.averageQuizScore = 0.0;
+        this.totalInterviewsTaken = 0;
+        this.averageInterviewScore = 0.0;
+        this.strongestTopics = "";
+        this.improvementAreas = "";
         this.createdAt = LocalDateTime.now();
         this.lastUpdated = LocalDateTime.now();
     }

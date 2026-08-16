@@ -33,7 +33,7 @@ function App() {
           />
 
           <Route path="/quiz/:id"
-            element={<QuizTaking />}
+            element={<ProtectedRoute><QuizTaking /></ProtectedRoute>}
           />
 
 

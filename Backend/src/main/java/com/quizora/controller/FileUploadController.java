@@ -52,15 +52,12 @@ public class FileUploadController {
     @PostMapping("/file")
     public ResponseEntity<?> uploadFile(
             @RequestParam("file") MultipartFile file,
-            @RequestHeader("Authorization") String authHeader) {
+            Authentication authentication) {
 
         try {
-
-            String token = authHeader.replace("Bearer ", "");
-            Map<String, Object> user =
-                    supabaseService.validateTokenAndGetUser(token);
-
-            String userId = (String) user.get("id");
+            String userId = (authentication != null && authentication.getName() != null)
+                    ? authentication.getName()
+                    : "dev-user";
 
             String publicUrl =
                     fileUploadService.uploadFile(file, userId);
@@ -130,13 +127,20 @@ public class FileUploadController {
     @PostMapping("/quiz")
     public ResponseEntity<?> uploadFileForQuiz(
             @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "questionCount", required = false, defaultValue = "10") Integer questionCount,
+            @RequestParam(value = "difficulty", required = false, defaultValue = "INTERMEDIATE") String difficulty,
+            @RequestParam(value = "timePerQuestion", required = false, defaultValue = "60") Integer timePerQuestion,
+            @RequestParam(value = "timeLimit", required = false) Integer timeLimit,
             Authentication authentication) {
 
         try {
-            String userId = authentication.getName();
+            String userId = (authentication != null && authentication.getName() != null)
+                    ? authentication.getName()
+                    : "dev-user";
             
             logger.info("=== QUIZ GENERATION START ===");
-            logger.info("User ID: {}", userId);
+            logger.info("User ID: {}, QuestionCount: {}, Difficulty: {}, TimePerQ: {}s, TimeLimit: {}s",
+                    userId, questionCount, difficulty, timePerQuestion, timeLimit);
 
             /* 1️⃣ Upload file */
             String publicUrl =
@@ -148,15 +152,21 @@ public class FileUploadController {
 
             logger.info("Text extracted length: {}", extractedText.length());
 
-            /* 3️⃣ Generate quiz using Gemini */
+            int calcTotalTime = (timeLimit != null && timeLimit > 0) ? timeLimit : (questionCount * timePerQuestion);
+
+            /* 3️⃣ Generate quiz using Gemini with custom settings */
             QuizResponse quiz =
                     quizService.generateQuizFromText(
                             userId,
                             extractedText,
-                            file.getOriginalFilename()
+                            file.getOriginalFilename(),
+                            questionCount != null ? questionCount : 10,
+                            difficulty != null ? difficulty : "INTERMEDIATE",
+                            calcTotalTime,
+                            timePerQuestion != null ? timePerQuestion : 60
                     );
 
-            logger.info("Quiz generated successfully");
+            logger.info("Quiz generated successfully with {} questions", quiz.getQuestions() != null ? quiz.getQuestions().size() : 0);
 
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Quiz generated successfully");

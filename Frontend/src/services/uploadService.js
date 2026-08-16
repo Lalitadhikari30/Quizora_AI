@@ -1,7 +1,7 @@
 // Fixed frontend upload service for Quizora AI
 // Handles file upload with proper FormData and error handling
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8081';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8081';
 
 class UploadService {
     /**

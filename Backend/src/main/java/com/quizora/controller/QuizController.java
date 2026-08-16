@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/quizzes")
@@ -39,12 +40,16 @@ public class QuizController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<QuizResponse> getQuiz(@PathVariable Long id) {
+    public ResponseEntity<QuizResponse> getQuiz(
+            @PathVariable Long id,
+            Authentication authentication) {
         try {
-            String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+            String userId = (authentication != null && authentication.getName() != null)
+                    ? authentication.getName()
+                    : "user-default";
             QuizResponse response = quizService.getQuiz(id, userId);
             
-            logger.info("Retrieved quiz {} for user: {}", id, userId);
+            logger.info("Retrieved Quiz: {}", response.getId());
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
@@ -54,12 +59,14 @@ public class QuizController {
     }
 
     @PostMapping("/{id}/submit")
-    public ResponseEntity<QuizResultResponse> submitQuiz(
+    public ResponseEntity<?> submitQuiz(
             @PathVariable Long id,
             @RequestBody List<AnswerSubmitRequest> answers,
             Authentication authentication) {
         try {
-            String userId = authentication.getName();
+            String userId = (authentication != null && authentication.getName() != null)
+                    ? authentication.getName()
+                    : "user-default";
             QuizResultResponse result = quizService.submitQuiz(id, answers, userId);
             
             logger.info("Submitted quiz {} for user: {}", id, userId);
@@ -67,7 +74,7 @@ public class QuizController {
             
         } catch (Exception e) {
             logger.error("Failed to submit Quiz", e);
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Failed to submit quiz"));
         }
     }
 

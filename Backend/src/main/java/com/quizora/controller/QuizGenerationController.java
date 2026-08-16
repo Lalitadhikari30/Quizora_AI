@@ -4,7 +4,6 @@ import com.quizora.dto.QuizResponse;
 import com.quizora.entity.ExtractedContent;
 import com.quizora.service.ExtractedContentService;
 import com.quizora.service.QuizService;
-import com.quizora.service.AiIntegrationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,9 +27,6 @@ public class QuizGenerationController {
     
     @Autowired
     private QuizService quizService;
-    
-    @Autowired
-    private AiIntegrationService aiIntegrationService;
     
     /**
      * Generate quiz from stored extracted content
@@ -76,21 +72,19 @@ public class QuizGenerationController {
             String geminiText = extractedContentService.validateAndPrepareTextForGemini(extractedText);
             logger.info("Text prepared for Gemini: {} characters", geminiText.length());
             
-            // Step 4: Call Gemini AI to generate quiz
-            logger.info("Step 4: Sending text to Gemini AI...");
-            var quizQuestions = aiIntegrationService.generateQuizFromContent(geminiText, "medium", "general", 5);
-            logger.info("Gemini response received: {} questions generated", quizQuestions.size());
-            
-            // Step 5: Save quiz to database (generateQuizFromText already saves to DB)
-            logger.info("Step 5: Saving quiz to database...");
+            // Step 4: Generate quiz using Gemini AI and save to database
+            // (generateQuizFromText handles both AI generation and DB persistence)
+            logger.info("Step 4: Generating quiz via Gemini AI and saving to database...");
             QuizResponse savedQuiz = quizService.generateQuizFromText(userId, geminiText, extractedContent.getFileName());
-            logger.info("Quiz saved successfully: ID {}", savedQuiz.getId());
+            logger.info("Quiz generated and saved successfully: ID {}", savedQuiz.getId());
             
-            // Step 6: Update ExtractedContent status to AI_GENERATED
+            // Step 5: Update ExtractedContent status to AI_GENERATED
             extractedContentService.markAsAiGenerated(extractedContentId, savedQuiz.getId());
             logger.info("ExtractedContent marked as AI generated");
             
             logger.info("=== QUIZ GENERATION FROM EXTRACTION SUCCESS ===");
+            
+            int questionsGenerated = savedQuiz.getQuestions() != null ? savedQuiz.getQuestions().size() : 0;
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -99,7 +93,7 @@ public class QuizGenerationController {
             response.put("extractedContentId", extractedContentId);
             response.put("fileName", extractedContent.getFileName());
             response.put("extractedTextLength", extractedText.length());
-            response.put("questionsGenerated", quizQuestions.size());
+            response.put("questionsGenerated", questionsGenerated);
             
             return ResponseEntity.ok(response);
             

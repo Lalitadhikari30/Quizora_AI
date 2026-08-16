@@ -89,7 +89,7 @@ SUPABASE_DB_PASSWORD=your-password
 
 # AI Configuration
 AI_API_KEY=your-gemini-api-key
-AI_API_URL=https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent
+AI_API_URL=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
 
 # Storage Configuration
 SUPABASE_STORAGE_BUCKET=quizora-files

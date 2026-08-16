@@ -122,7 +122,11 @@ public class ContentExtractionService {
     private String extractFromPdf(MultipartFile file) throws IOException {
         logger.info("=== PDF EXTRACTION START ===");
         
-        try (InputStream inputStream = file.getInputStream()) {
+        try (InputStream rawStream = file.getInputStream();
+             java.io.BufferedInputStream inputStream = new java.io.BufferedInputStream(rawStream)) {
+            // Mark the stream so we can reset after reading the header
+            inputStream.mark(10);
+            
             // Validate PDF file format
             byte[] headerBytes = new byte[4];
             int bytesRead = inputStream.read(headerBytes);

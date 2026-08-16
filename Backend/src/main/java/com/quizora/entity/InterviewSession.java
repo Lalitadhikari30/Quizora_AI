@@ -33,7 +33,7 @@ public class InterviewSession {
     @Column(nullable = false)
     private String difficulty;
     
-    @Column(name = "first_question")
+    @Column(name = "first_question", columnDefinition = "TEXT")
     private String firstQuestion;
     
     @Column(name = "current_question_index")
@@ -49,16 +49,22 @@ public class InterviewSession {
     @Enumerated(EnumType.STRING)
     private SessionStatus status = SessionStatus.ACTIVE;
     
-    @Column(name = "started_at")
+    @Column(name = "start_time", nullable = false)
     @CreationTimestamp
     private LocalDateTime startedAt;
     
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
     
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+    
     @Column(name = "updated_at")
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+    
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive;
     
     @OneToMany(mappedBy = "interviewSession", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<InterviewResponse> responses;
@@ -69,46 +75,18 @@ public class InterviewSession {
         ABANDONED
     }
     
-    // Manual getters and setters to ensure they exist
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    @PrePersist
+    public void onCreate() {
+        if (this.startedAt == null) {
+            this.startedAt = LocalDateTime.now();
+        }
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+        this.isActive = true;
+    }
     
-    public String getUserId() { return userId; }
-    public void setUserId(String userId) { this.userId = userId; }
-    
-    public String getJobRole() { return jobRole; }
-    public void setJobRole(String jobRole) { this.jobRole = jobRole; }
-    
-    public String getExperience() { return experience; }
-    public void setExperience(String experience) { this.experience = experience; }
-    
-    public String getDifficulty() { return difficulty; }
-    public void setDifficulty(String difficulty) { this.difficulty = difficulty; }
-    
-    public String getFirstQuestion() { return firstQuestion; }
-    public void setFirstQuestion(String firstQuestion) { this.firstQuestion = firstQuestion; }
-    
-    public Integer getCurrentQuestionIndex() { return currentQuestionIndex; }
-    public void setCurrentQuestionIndex(Integer currentQuestionIndex) { this.currentQuestionIndex = currentQuestionIndex; }
-    
-    public Integer getTotalQuestions() { return totalQuestions; }
-    public void setTotalQuestions(Integer totalQuestions) { this.totalQuestions = totalQuestions; }
-    
-    public Integer getTotalScore() { return totalScore; }
-    public void setTotalScore(Integer totalScore) { this.totalScore = totalScore; }
-    
-    public SessionStatus getStatus() { return status; }
-    public void setStatus(SessionStatus status) { this.status = status; }
-    
-    public LocalDateTime getStartedAt() { return startedAt; }
-    public void setStartedAt(LocalDateTime startedAt) { this.startedAt = startedAt; }
-    
-    public LocalDateTime getCompletedAt() { return completedAt; }
-    public void setCompletedAt(LocalDateTime completedAt) { this.completedAt = completedAt; }
-    
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
-    
-    public List<InterviewResponse> getResponses() { return responses; }
-    public void setResponses(List<InterviewResponse> responses) { this.responses = responses; }
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

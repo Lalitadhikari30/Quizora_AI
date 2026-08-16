@@ -87,12 +87,6 @@ export const authService = {
   /* -------- LOGIN USER -------- */
   async login(credentials) {
     try {
-      // Always try development fallback first for testing
-      if (process.env.NODE_ENV === 'development' || !process.env.REACT_APP_SUPABASE_URL) {
-        console.warn('Using development login fallback');
-        return await this._loginDevelopmentFallback(credentials);
-      }
-
       const { data, error } = await supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password
@@ -100,37 +94,35 @@ export const authService = {
 
       if (error) throw new Error(error.message);
 
-      if (data.session?.access_token) {
-        console.log('🔍 Login user data:', data.user);
-        console.log('🔍 Login user metadata:', data.user?.user_metadata);
-        
-        localStorage.setItem('token', data.session.access_token);
-        localStorage.setItem(
-          'userName',
-          data.user?.user_metadata?.name || data.user.email
-        );
-
-        // Dispatch storage events to trigger immediate UI updates
-        window.dispatchEvent(new StorageEvent('storage', {
-          key: 'token',
-          newValue: data.session.access_token
-        }));
-        window.dispatchEvent(new StorageEvent('storage', {
-          key: 'userName',
-          newValue: data.user?.user_metadata?.name || data.user.email
-        }));
-
-        await this.syncUserWithBackend(data.user);
+      if (!data.session?.access_token) {
+        throw new Error('Login failed: Session token missing. Please confirm your email address or check credentials.');
       }
+
+      console.log('🔍 Login user data:', data.user);
+      console.log('🔍 Login user metadata:', data.user?.user_metadata);
+      
+      localStorage.setItem('token', data.session.access_token);
+      localStorage.setItem(
+        'userName',
+        data.user?.user_metadata?.name || data.user?.email || 'User'
+      );
+
+      // Dispatch storage events to trigger immediate UI updates
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'token',
+        newValue: data.session.access_token
+      }));
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'userName',
+        newValue: data.user?.user_metadata?.name || data.user?.email || 'User'
+      }));
+
+      await this.syncUserWithBackend(data.user);
 
       return data;
 
     } catch (error) {
-      // For development mode, provide fallback
-      if (process.env.NODE_ENV === 'development' || !process.env.REACT_APP_SUPABASE_URL) {
-        console.warn('Login failed, trying development fallback...');
-        return await this._loginDevelopmentFallback(credentials);
-      }
+      console.error('Login failed:', error.message);
       throw error;
     }
   },

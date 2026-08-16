@@ -2,7 +2,7 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || "http://localhost:8081",
-  timeout: 30000,
+  timeout: 60000,
 });
 
 api.interceptors.request.use(
@@ -20,15 +20,28 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('userName');
-      window.location.href = "/login";
+      const path = window.location.pathname;
+      if (path !== "/login" && path !== "/register") {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userName');
+        window.location.href = "/login";
+      }
     }
 
-    const errorMessage =
-      error.response?.data?.error ||
-      error.response?.data?.message ||
-      "An unexpected error occurred";
+    const data = error.response?.data;
+    let errorMessage = "An unexpected error occurred";
+
+    if (typeof data === "string") {
+      errorMessage = data;
+    } else if (data && typeof data === "object") {
+      errorMessage =
+        data.details ||
+        data.error ||
+        data.message ||
+        "An unexpected error occurred";
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
 
     return Promise.reject(new Error(errorMessage));
   }

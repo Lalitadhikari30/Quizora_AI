@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -101,5 +103,33 @@ public class GlobalExceptionHandler {
         response.put("type", "security_error");
         
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    }
+    
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<Map<String, Object>> handleAuthenticationException(AuthenticationException e) {
+        logger.error("Authentication exception occurred", e);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("timestamp", LocalDateTime.now().toString());
+        response.put("status", "error");
+        response.put("message", "Authentication failed: " + e.getMessage());
+        response.put("type", "authentication_error");
+        
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    }
+    
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+        logger.error("Invalid request parameters", ex);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("timestamp", LocalDateTime.now().toString());
+        response.put("status", "error");
+        response.put("message", "Invalid request: " + ex.getMessage());
+        response.put("type", "invalid_argument");
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 }

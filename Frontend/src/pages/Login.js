@@ -316,10 +316,8 @@ const Login = () => {
 
                 </label>
 
-                <a href="#" className="text-sm text-orange-400 hover:text-orange-300">
-
-                  Forgot password?
-
+                <a href="#forgot" onClick={(e) => { e.preventDefault(); handleResendConfirmation(); }} className="text-sm text-orange-400 hover:text-orange-300">
+                  {resendLoading ? 'Sending...' : 'Forgot password?'}
                 </a>
 
               </div>

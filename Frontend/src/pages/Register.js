@@ -214,11 +214,11 @@ const Register = () => {
                 />
                 <span className="ml-2 text-sm text-gray-400">
                   I agree to the{' '}
-                  <a href="#" className="text-orange-400 hover:text-orange-300">
+                  <a href="#terms" className="text-orange-400 hover:text-orange-300">
                     Terms of Service
                   </a>{' '}
                   and{' '}
-                  <a href="#" className="text-orange-400 hover:text-orange-300">
+                  <a href="#privacy" className="text-orange-400 hover:text-orange-300">
                     Privacy Policy
                   </a>
                 </span>

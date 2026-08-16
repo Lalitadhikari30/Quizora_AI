@@ -1,7 +1,7 @@
 // Frontend service for the new quiz generation architecture
 // Handles the two-step process: upload/extract → generate quiz
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8081';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8081';
 
 class QuizGenerationService {
     /**

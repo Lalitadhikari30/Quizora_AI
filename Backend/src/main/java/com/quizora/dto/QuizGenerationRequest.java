@@ -24,6 +24,10 @@ public class QuizGenerationRequest {
     
     private String topics;
     
+    private Integer timeLimit; // Total time in seconds
+    
+    private Integer timePerQuestion; // Time per question in seconds
+
     // Getters and Setters
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
@@ -48,4 +52,10 @@ public class QuizGenerationRequest {
     
     public String getTopics() { return topics; }
     public void setTopics(String topics) { this.topics = topics; }
+
+    public Integer getTimeLimit() { return timeLimit; }
+    public void setTimeLimit(Integer timeLimit) { this.timeLimit = timeLimit; }
+
+    public Integer getTimePerQuestion() { return timePerQuestion; }
+    public void setTimePerQuestion(Integer timePerQuestion) { this.timePerQuestion = timePerQuestion; }
 }

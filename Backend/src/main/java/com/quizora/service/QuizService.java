@@ -218,13 +218,7 @@ public class QuizService {
                     .orElseThrow(() ->
                             new RuntimeException("Question not found"));
 
-            List<String> options = new ArrayList<>();
-            if (question.getOptions() != null) {
-                String[] split = question.getOptions().split(",");
-                for (String opt : split) {
-                    options.add(opt.trim());
-                }
-            }
+            List<String> options = parseQuestionOptions(question.getOptions());
 
             Integer selectedIndex = submitted.getSelectedAnswer();
             String userAnswer = null;
@@ -236,11 +230,7 @@ public class QuizService {
             }
 
             String correctAnswer = question.getCorrectAnswer();
-            boolean isCorrect = false;
-
-            if (userAnswer != null && correctAnswer != null) {
-                isCorrect = userAnswer.equalsIgnoreCase(correctAnswer);
-            }
+            boolean isCorrect = isAnswerCorrect(userAnswer, selectedIndex, correctAnswer, options);
 
             if (isCorrect) correctCount++;
 
@@ -404,5 +394,98 @@ public class QuizService {
             case "advanced": return 3;
             default: return 2;
         }
+    }
+
+    private List<String> parseQuestionOptions(String rawOptions) {
+        List<String> options = new ArrayList<>();
+        if (rawOptions == null || rawOptions.trim().isEmpty()) {
+            return options;
+        }
+
+        String raw = rawOptions.trim();
+        if (raw.startsWith("[") && raw.endsWith("]")) {
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                List<String> parsed = mapper.readValue(raw, new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {});
+                if (parsed != null && !parsed.isEmpty()) {
+                    for (String opt : parsed) {
+                        if (opt != null) {
+                            options.add(opt.trim());
+                        }
+                    }
+                    return options;
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // Delimiter splitting fallback (| or ,)
+        String delimiter = raw.contains("|") ? "\\|" : ",";
+        String[] split = raw.split(delimiter);
+        for (String opt : split) {
+            String clean = opt.trim()
+                    .replaceAll("^\\[?\"?", "")
+                    .replaceAll("\"?\\]?$", "")
+                    .trim();
+            if (!clean.isEmpty()) {
+                options.add(clean);
+            }
+        }
+        return options;
+    }
+
+    private boolean isAnswerCorrect(String userAnswer, Integer selectedIndex, String correctAnswer, List<String> options) {
+        if (correctAnswer == null || correctAnswer.trim().isEmpty()) {
+            return false;
+        }
+
+        String normCorrect = normalizeAnswer(correctAnswer);
+
+        // 1. If correct answer is an index ("0", "1", "2", "3")
+        if (selectedIndex != null) {
+            if (correctAnswer.trim().equals(selectedIndex.toString())) {
+                return true;
+            }
+        }
+
+        // 2. Direct normalized match with user answer
+        if (userAnswer != null) {
+            String normUser = normalizeAnswer(userAnswer);
+            if (normUser.equals(normCorrect)) {
+                return true;
+            }
+
+            // Substring or prefix matching if long enough
+            if (normUser.length() > 5 && (normCorrect.startsWith(normUser) || normUser.startsWith(normCorrect))) {
+                return true;
+            }
+            if (normUser.length() > 5 && (normCorrect.contains(normUser) || normUser.contains(normCorrect))) {
+                return true;
+            }
+        }
+
+        // 3. Match against options list
+        if (selectedIndex != null && selectedIndex >= 0 && selectedIndex < options.size()) {
+            String optText = options.get(selectedIndex);
+            String normOpt = normalizeAnswer(optText);
+            if (normOpt.equals(normCorrect)) {
+                return true;
+            }
+            if (normOpt.length() > 5 && (normCorrect.startsWith(normOpt) || normOpt.startsWith(normCorrect))) {
+                return true;
+            }
+            if (normOpt.length() > 5 && (normCorrect.contains(normOpt) || normOpt.contains(normCorrect))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private String normalizeAnswer(String text) {
+        if (text == null) return "";
+        return text.trim()
+                .toLowerCase()
+                .replaceAll("^(option\\s+[a-d][:.]?|[a-d][.:)]\\s*)", "")
+                .replaceAll("[^a-z0-9]", "");
     }
 }

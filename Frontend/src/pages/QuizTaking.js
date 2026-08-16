@@ -204,10 +204,61 @@ const QuizTaking = () => {
 
   /* ================= RENDER REVIEW MODE ================= */
   if (isReviewMode) {
+    const normalizeText = (s) => (s || "").toString().toLowerCase().replace(/[^a-z0-9]/g, "");
     const reviews = submissionResult?.answerReviews || [];
-    const score = submissionResult?.score ?? submissionResult?.correctAnswers ?? 0;
-    const total = submissionResult?.totalQuestions ?? quiz.questions.length;
-    const pct = submissionResult?.percentage ?? (total > 0 ? Math.round((score / total) * 100) : 0);
+    
+    // Calculate verified score in real-time across all questions
+    let calculatedCorrectCount = 0;
+    quiz.questions.forEach((question) => {
+      const options = parseOptions(question.options);
+      const reviewObj = reviews.find((r) => 
+        (r.questionId && r.questionId === question.id) ||
+        (r.question && r.question.trim().toLowerCase() === question.questionText?.trim().toLowerCase())
+      );
+
+      const userSelectedVal = answers[question.id] || reviewObj?.userAnswer;
+      const correctAnsStr = question.correctAnswer?.trim() || reviewObj?.correctAnswer?.trim() || "";
+
+      if (userSelectedVal && correctAnsStr) {
+        const normCorrect = normalizeText(correctAnsStr);
+        const normUser = normalizeText(userSelectedVal);
+
+        let bestCorrectIdx = -1;
+        options.forEach((opt, idx) => {
+          const normOpt = normalizeText(opt);
+          if (normOpt === normCorrect || idx.toString() === correctAnsStr) {
+            bestCorrectIdx = idx;
+          } else if (bestCorrectIdx === -1 && normCorrect.length > 5 && (normCorrect.startsWith(normOpt) || normOpt.startsWith(normCorrect))) {
+            bestCorrectIdx = idx;
+          }
+        });
+
+        if (bestCorrectIdx === -1 && normCorrect.length > 5) {
+          options.forEach((opt, idx) => {
+            const normOpt = normalizeText(opt);
+            if (bestCorrectIdx === -1 && normOpt.length > 5 && (normCorrect.includes(normOpt) || normOpt.includes(normCorrect))) {
+              bestCorrectIdx = idx;
+            }
+          });
+        }
+
+        const isCorrect = (bestCorrectIdx >= 0 && (normUser === normalizeText(options[bestCorrectIdx]) || userSelectedVal.toString() === bestCorrectIdx.toString())) ||
+                          (normUser === normCorrect) ||
+                          (reviewObj?.isCorrect === true);
+
+        if (isCorrect) {
+          calculatedCorrectCount++;
+        }
+      }
+    });
+
+    const total = quiz.questions.length || submissionResult?.totalQuestions || 1;
+    const score = submissionResult?.score !== undefined && submissionResult.score > 0
+      ? submissionResult.score
+      : calculatedCorrectCount;
+    const pct = submissionResult?.percentage !== undefined && submissionResult.percentage > 0
+      ? Math.round(submissionResult.percentage)
+      : Math.round((score / total) * 100);
 
     return (
       <section className="bg-[#0a0a0a] min-h-screen py-12 font-mono">
